@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__e32acc00-3d25-46f3-b6af-1aeeffdb44d3__search_workflows",
+      "mcp__e32acc00-3d25-46f3-b6af-1aeeffdb44d3__get_workflow_details",
+      "mcp__e32acc00-3d25-46f3-b6af-1aeeffdb44d3__search_nodes",
+      "mcp__e32acc00-3d25-46f3-b6af-1aeeffdb44d3__get_node_types",
+      "mcp__e32acc00-3d25-46f3-b6af-1aeeffdb44d3__validate_workflow",
+      "mcp__e32acc00-3d25-46f3-b6af-1aeeffdb44d3__update_workflow",
+      "Bash(python -c \"import json; json.load\\(open\\('n8n-workflow-ga4.json'\\)\\); print\\('Valid JSON'\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('n8n-workflow-ga4.json','utf8'\\)\\); console.log\\('Valid JSON'\\)\")"
+    ]
+  }
+}
