@@ -8,7 +8,20 @@
       "mcp__e32acc00-3d25-46f3-b6af-1aeeffdb44d3__validate_workflow",
       "mcp__e32acc00-3d25-46f3-b6af-1aeeffdb44d3__update_workflow",
       "Bash(python -c \"import json; json.load\\(open\\('n8n-workflow-ga4.json'\\)\\); print\\('Valid JSON'\\)\")",
-      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('n8n-workflow-ga4.json','utf8'\\)\\); console.log\\('Valid JSON'\\)\")"
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('n8n-workflow-ga4.json','utf8'\\)\\); console.log\\('Valid JSON'\\)\")",
+      "Bash(npm --version)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)",
+      "Bash(mkdir -p _tmp)",
+      "Bash(mv n8n-workflow-ga4.json _tmp/)",
+      "Bash(mv supabase-schema-ga4.sql _tmp/)",
+      "Bash(cp /tmp/mktdash/package.json \"D:\\\\DEV\\\\marketting-dashboard/\")",
+      "Bash(cp /tmp/mktdash/package-lock.json \"D:\\\\DEV\\\\marketting-dashboard/\")",
+      "Bash(cp /tmp/mktdash/tsconfig.json \"D:\\\\DEV\\\\marketting-dashboard/\")",
+      "Bash(cp /tmp/mktdash/next.config.ts \"D:\\\\DEV\\\\marketting-dashboard/\")",
+      "Bash(cp /tmp/mktdash/postcss.config.mjs \"D:\\\\DEV\\\\marketting-dashboard/\")",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

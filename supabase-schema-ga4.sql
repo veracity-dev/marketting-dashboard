@@ -93,6 +93,23 @@ CREATE INDEX IF NOT EXISTS idx_ga_top_pages_views       ON ga_top_pages        (
 CREATE INDEX IF NOT EXISTS idx_ga_device_geo_date       ON ga_device_geo       (property_id, report_date DESC);
 
 -- ============================================================
+-- Schema & table permissions
+-- PostgreSQL 15+ (Supabase) revoked default PUBLIC grants on the public
+-- schema. These grants must be applied explicitly for all Supabase roles.
+-- ============================================================
+
+-- Schema-level access for all roles
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+
+-- Full access for backend roles (n8n writes via service_role, migrations via postgres)
+GRANT ALL ON ALL TABLES    IN SCHEMA public TO postgres, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, service_role;
+
+-- Read-only access for frontend roles (Next.js dashboard queries)
+GRANT SELECT ON ALL TABLES    IN SCHEMA public TO anon, authenticated;
+GRANT USAGE  ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+
+-- ============================================================
 -- Row Level Security
 -- ============================================================
 ALTER TABLE ga_daily_overview  ENABLE ROW LEVEL SECURITY;
