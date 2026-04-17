@@ -14,12 +14,13 @@ function getSupabase() {
   return createClient(url, key)
 }
 
-const PROPERTY_ID = process.env.NEXT_PUBLIC_GA4_PROPERTY_ID ?? '523852603'
+const DEFAULT_PROPERTY_ID = process.env.NEXT_PUBLIC_GA4_PROPERTY_ID ?? '523852603'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
-  const start = searchParams.get('start_date')
-  const end   = searchParams.get('end_date')
+  const start      = searchParams.get('start_date')
+  const end        = searchParams.get('end_date')
+  const propertyId = searchParams.get('property_id') ?? DEFAULT_PROPERTY_ID
   // poll=true: only return last collected_at (lightweight check during refresh)
   const pollOnly = searchParams.get('poll') === 'true'
 
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
       const { data } = await supabase
         .from('ga_daily_overview')
         .select('collected_at')
-        .eq('property_id', PROPERTY_ID)
+        .eq('property_id', propertyId)
         .gte('report_date', start)
         .lte('report_date', end)
         .order('collected_at', { ascending: false })
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest) {
       supabase
         .from('ga_daily_overview')
         .select('*')
-        .eq('property_id', PROPERTY_ID)
+        .eq('property_id', propertyId)
         .gte('report_date', start)
         .lte('report_date', end)
         .order('report_date', { ascending: true }),
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
       supabase
         .from('ga_ecommerce')
         .select('*')
-        .eq('property_id', PROPERTY_ID)
+        .eq('property_id', propertyId)
         .gte('report_date', start)
         .lte('report_date', end)
         .order('report_date', { ascending: true }),
@@ -70,7 +71,7 @@ export async function GET(req: NextRequest) {
       supabase
         .from('ga_traffic_sources')
         .select('*')
-        .eq('property_id', PROPERTY_ID)
+        .eq('property_id', propertyId)
         .gte('report_date', start)
         .lte('report_date', end)
         .order('report_date', { ascending: true }),
@@ -78,7 +79,7 @@ export async function GET(req: NextRequest) {
       supabase
         .from('ga_top_pages')
         .select('*')
-        .eq('property_id', PROPERTY_ID)
+        .eq('property_id', propertyId)
         .gte('report_date', start)
         .lte('report_date', end)
         .order('screen_page_views', { ascending: false })
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
       supabase
         .from('ga_device_geo')
         .select('*')
-        .eq('property_id', PROPERTY_ID)
+        .eq('property_id', propertyId)
         .gte('report_date', start)
         .lte('report_date', end)
         .order('sessions', { ascending: false }),

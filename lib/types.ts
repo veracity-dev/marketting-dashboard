@@ -99,6 +99,14 @@ export interface EcommerceSummary {
   purchaseToViewRate: number
 }
 
+export interface GAProperty {
+  property_id:  string
+  display_name: string
+  account_name: string
+  account_id:   string
+  last_synced:  string | null
+}
+
 export type RefreshStatus = 'idle' | 'triggering' | 'polling' | 'done' | 'error'
 
 export type DataSource = 'ga4' | 'google_ads' | 'meta' | 'linkedin'

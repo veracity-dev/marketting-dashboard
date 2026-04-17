@@ -7,20 +7,20 @@ interface UseGA4DataReturn {
   data: GA4Data | null
   loading: boolean
   error: string | null
-  fetchData: (range: DateRange) => Promise<void>
+  fetchData: (range: DateRange, propertyId: string) => Promise<void>
 }
 
 export function useGA4Data(): UseGA4DataReturn {
-  const [data, setData]     = useState<GA4Data | null>(null)
+  const [data, setData]       = useState<GA4Data | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError]   = useState<string | null>(null)
+  const [error, setError]     = useState<string | null>(null)
 
-  const fetchData = useCallback(async (range: DateRange) => {
+  const fetchData = useCallback(async (range: DateRange, propertyId: string) => {
     setLoading(true)
     setError(null)
     try {
       const res = await fetch(
-        `/api/analytics?start_date=${range.start}&end_date=${range.end}`
+        `/api/analytics?start_date=${range.start}&end_date=${range.end}&property_id=${encodeURIComponent(propertyId)}`
       )
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))

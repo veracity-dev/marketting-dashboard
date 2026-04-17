@@ -3,6 +3,15 @@
 -- Run this fresh in Supabase SQL Editor (drop tables first if re-creating)
 -- ============================================================
 
+-- 0. GA4 Properties registry (one row per property)
+--    Populated automatically by n8n on each sync.
+CREATE TABLE IF NOT EXISTS ga_properties (
+  property_id  TEXT PRIMARY KEY,
+  display_name TEXT        NOT NULL DEFAULT '',
+  last_synced  TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- 1. Daily overview KPIs (one row per property per day)
 CREATE TABLE IF NOT EXISTS ga_daily_overview (
   id                   BIGSERIAL PRIMARY KEY,
@@ -109,6 +118,12 @@ GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, service_role;
 GRANT SELECT ON ALL TABLES    IN SCHEMA public TO anon, authenticated;
 GRANT USAGE  ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
 
+-- Ensure future tables also inherit these grants
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT ALL ON TABLES TO postgres, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT ON TABLES TO anon, authenticated;
+
 -- ============================================================
 -- Row Level Security
 -- ============================================================
@@ -131,3 +146,20 @@ CREATE POLICY "Allow service role write" ON ga_ecommerce       FOR ALL USING (au
 CREATE POLICY "Allow service role write" ON ga_traffic_sources FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "Allow service role write" ON ga_top_pages       FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "Allow service role write" ON ga_device_geo      FOR ALL USING (auth.role() = 'service_role');
+
+-- ============================================================
+-- 7. Refresh log — n8n INSERTs one row here as its VERY LAST
+--    step. The dashboard detects completion by polling for any
+--    row with id > last_known_id. Each run = one new row.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS refresh_log (
+  id            BIGSERIAL    PRIMARY KEY,
+  property_id   TEXT         NOT NULL,
+  status        TEXT         NOT NULL DEFAULT 'done',   -- 'done' or 'error'
+  error_message TEXT,                                    -- populated on failure
+  completed_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE refresh_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow read for authenticated" ON refresh_log FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow service role write"     ON refresh_log FOR ALL    USING (auth.role() = 'service_role');

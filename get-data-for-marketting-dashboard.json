@@ -1,0 +1,805 @@
+{
+  "name": "get-data-for-marketting-dashboard",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ga-analytics",
+        "options": {
+          "responseCode": {
+            "values": {
+              "responseCode": "customCode",
+              "customCode": 202
+            }
+          },
+          "responseData": "{\"status\": \"accepted\", \"message\": \"GA4 pipeline started.\"}"
+        }
+      },
+      "id": "53edee16-a78d-43af-b122-571edc6e4280",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        1344,
+        2144
+      ],
+      "webhookId": "e6e1ef17-6aeb-4fd4-a243-824704621f95"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ (() => { const pid = String($('Webhook').first().json.body.property_id || '').replace(/'/g, \"''\"); const name = String($('Webhook').first().json.body.display_name || pid).replace(/,/g, '').replace(/'/g, \"''\"); if (!pid) return 'SELECT 1'; return `INSERT INTO ga_properties (property_id, display_name, last_synced) VALUES ('${pid}', '${name}', NOW()) ON CONFLICT (property_id) DO UPDATE SET display_name = CASE WHEN EXCLUDED.display_name = '' THEN ga_properties.display_name ELSE EXCLUDED.display_name END, last_synced = NOW()`; })() }}",
+        "options": {}
+      },
+      "id": "190c34cb-5cc8-4cb8-9665-897a9f6bfe29",
+      "name": "PG Upsert Property",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1568,
+        2144
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "brSX77VmZxVQKII4",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "propertyId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Webhook').first().json.body.property_id }}"
+        },
+        "dateRange": "custom",
+        "startDate": "={{ $('Webhook').first().json.body.start_date }}",
+        "endDate": "={{ $('Webhook').first().json.body.end_date }}",
+        "metricsGA4": {
+          "metricValues": [
+            {
+              "listName": "sessions"
+            },
+            {},
+            {
+              "listName": "other",
+              "name": "newUsers"
+            },
+            {
+              "listName": "screenPageViews"
+            },
+            {
+              "listName": "other",
+              "name": "bounceRate"
+            },
+            {
+              "listName": "other",
+              "name": "averageSessionDuration"
+            },
+            {
+              "listName": "other",
+              "name": "engagementRate"
+            },
+            {
+              "listName": "other",
+              "name": "engagedSessions"
+            }
+          ]
+        },
+        "dimensionsGA4": {
+          "dimensionValues": [
+            {}
+          ]
+        },
+        "returnAll": true,
+        "additionalFields": {}
+      },
+      "id": "09f64083-6513-4504-91f7-b0c543dadb20",
+      "name": "GA4 Overview",
+      "type": "n8n-nodes-base.googleAnalytics",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        1760
+      ],
+      "credentials": {
+        "googleAnalyticsOAuth2": {
+          "id": "08uUi5AZ2UXCyFDs",
+          "name": "Google Analytics account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "propertyId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Webhook').first().json.body.property_id }}"
+        },
+        "dateRange": "custom",
+        "startDate": "={{ $('Webhook').first().json.body.start_date }}",
+        "endDate": "={{ $('Webhook').first().json.body.end_date }}",
+        "metricsGA4": {
+          "metricValues": [
+            {
+              "listName": "other",
+              "name": "totalRevenue"
+            },
+            {
+              "listName": "other",
+              "name": "transactions"
+            },
+            {
+              "listName": "other",
+              "name": "averagePurchaseRevenue"
+            },
+            {
+              "listName": "other",
+              "name": "sessionConversionRate"
+            },
+            {
+              "listName": "other",
+              "name": "purchaseToViewRate"
+            }
+          ]
+        },
+        "dimensionsGA4": {
+          "dimensionValues": [
+            {}
+          ]
+        },
+        "returnAll": true,
+        "additionalFields": {}
+      },
+      "id": "58fd8763-ca38-4d96-9887-b4428b5ca3c6",
+      "name": "GA4 Ecommerce",
+      "type": "n8n-nodes-base.googleAnalytics",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        1952
+      ],
+      "credentials": {
+        "googleAnalyticsOAuth2": {
+          "id": "08uUi5AZ2UXCyFDs",
+          "name": "Google Analytics account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "propertyId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Webhook').first().json.body.property_id }}"
+        },
+        "dateRange": "custom",
+        "startDate": "={{ $('Webhook').first().json.body.start_date }}",
+        "endDate": "={{ $('Webhook').first().json.body.end_date }}",
+        "metricsGA4": {
+          "metricValues": [
+            {
+              "listName": "sessions"
+            },
+            {
+              "listName": "other",
+              "name": "bounceRate"
+            },
+            {
+              "listName": "other",
+              "name": "engagementRate"
+            }
+          ]
+        },
+        "dimensionsGA4": {
+          "dimensionValues": [
+            {},
+            {
+              "listName": "other",
+              "name": "sessionDefaultChannelGroup"
+            },
+            {
+              "listName": "sourceMedium"
+            }
+          ]
+        },
+        "returnAll": true,
+        "additionalFields": {}
+      },
+      "id": "c6f70932-3f0e-4d19-ad0c-200898e3b3d7",
+      "name": "GA4 Traffic Sources",
+      "type": "n8n-nodes-base.googleAnalytics",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        2144
+      ],
+      "credentials": {
+        "googleAnalyticsOAuth2": {
+          "id": "08uUi5AZ2UXCyFDs",
+          "name": "Google Analytics account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "propertyId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Webhook').first().json.body.property_id }}"
+        },
+        "dateRange": "custom",
+        "startDate": "={{ $('Webhook').first().json.body.start_date }}",
+        "endDate": "={{ $('Webhook').first().json.body.end_date }}",
+        "metricsGA4": {
+          "metricValues": [
+            {
+              "listName": "screenPageViews"
+            },
+            {
+              "listName": "other",
+              "name": "averageSessionDuration"
+            },
+            {
+              "listName": "other",
+              "name": "bounceRate"
+            },
+            {
+              "listName": "other",
+              "name": "engagementRate"
+            }
+          ]
+        },
+        "dimensionsGA4": {
+          "dimensionValues": [
+            {},
+            {
+              "listName": "other",
+              "name": "pagePath"
+            },
+            {
+              "listName": "other",
+              "name": "pageTitle"
+            }
+          ]
+        },
+        "returnAll": true,
+        "additionalFields": {}
+      },
+      "id": "d72925a8-3fb8-4466-97b5-31ede02e6a66",
+      "name": "GA4 Top Pages",
+      "type": "n8n-nodes-base.googleAnalytics",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        2336
+      ],
+      "credentials": {
+        "googleAnalyticsOAuth2": {
+          "id": "08uUi5AZ2UXCyFDs",
+          "name": "Google Analytics account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "propertyId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Webhook').first().json.body.property_id }}"
+        },
+        "dateRange": "custom",
+        "startDate": "={{ $('Webhook').first().json.body.start_date }}",
+        "endDate": "={{ $('Webhook').first().json.body.end_date }}",
+        "metricsGA4": {
+          "metricValues": [
+            {
+              "listName": "sessions"
+            },
+            {}
+          ]
+        },
+        "dimensionsGA4": {
+          "dimensionValues": [
+            {},
+            {
+              "listName": "deviceCategory"
+            },
+            {
+              "listName": "country"
+            }
+          ]
+        },
+        "returnAll": true,
+        "additionalFields": {}
+      },
+      "id": "be41ce1c-74b8-4ae4-95c1-0f1d086aaa96",
+      "name": "GA4 Device Geo",
+      "type": "n8n-nodes-base.googleAnalytics",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        2528
+      ],
+      "credentials": {
+        "googleAnalyticsOAuth2": {
+          "id": "08uUi5AZ2UXCyFDs",
+          "name": "Google Analytics account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nconst property_id = String($('Webhook').first().json.body.property_id);\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id,\n    report_date,\n    sessions: Number(d.sessions) || 0,\n    total_users: Number(d.totalUsers) || 0,\n    new_users: Number(d.newUsers) || 0,\n    screen_page_views: Number(d.screenPageViews) || 0,\n    bounce_rate: Number(d.bounceRate) || 0,\n    avg_session_duration: Number(d.averageSessionDuration) || 0,\n    engagement_rate: Number(d.engagementRate) || 0,\n    engaged_sessions: Number(d.engagedSessions) || 0,\n    collected_at\n  }};\n});"
+      },
+      "id": "a93786d5-5c75-4ca6-9720-9e2d63e267e1",
+      "name": "Transform Overview",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        1760
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nconst property_id = String($('Webhook').first().json.body.property_id);\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id,\n    report_date,\n    total_revenue: Number(d.totalRevenue) || 0,\n    transactions: Number(d.transactions) || 0,\n    avg_purchase_revenue: Number(d.averagePurchaseRevenue) || 0,\n    session_conversion_rate: Number(d.sessionConversionRate) || 0,\n    purchase_to_view_rate: Number(d.purchaseToViewRate) || 0,\n    collected_at\n  }};\n});"
+      },
+      "id": "d9956815-c702-4c73-8963-da37812f80a3",
+      "name": "Transform Ecommerce",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        1952
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nconst property_id = String($('Webhook').first().json.body.property_id);\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id,\n    report_date,\n    channel_group: String(d.sessionDefaultChannelGroup || '').replace(/,/g, ''),\n    source_medium: String(d.sourceMedium || '').replace(/,/g, ''),\n    sessions: Number(d.sessions) || 0,\n    bounce_rate: Number(d.bounceRate) || 0,\n    engagement_rate: Number(d.engagementRate) || 0,\n    collected_at\n  }};\n});"
+      },
+      "id": "fd202122-432c-43ef-9efd-ed9cacdaaef3",
+      "name": "Transform Traffic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        2144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nconst property_id = String($('Webhook').first().json.body.property_id);\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id,\n    report_date,\n    page_path: String(d.pagePath || '').replace(/,/g, ''),\n    page_title: String(d.pageTitle || '').replace(/,/g, ''),\n    screen_page_views: Number(d.screenPageViews) || 0,\n    avg_session_duration: Number(d.averageSessionDuration) || 0,\n    bounce_rate: Number(d.bounceRate) || 0,\n    engagement_rate: Number(d.engagementRate) || 0,\n    collected_at\n  }};\n});"
+      },
+      "id": "1ff414b3-ebbf-4cf5-a747-35b598d16164",
+      "name": "Transform Pages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        2336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nconst property_id = String($('Webhook').first().json.body.property_id);\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id,\n    report_date,\n    device_category: String(d.deviceCategory || '').replace(/,/g, ''),\n    country: String(d.country || '').replace(/,/g, ''),\n    sessions: Number(d.sessions) || 0,\n    total_users: Number(d.totalUsers) || 0,\n    collected_at\n  }};\n});"
+      },
+      "id": "de3a59f9-3720-4849-a35c-fb2ec2c64868",
+      "name": "Transform Device Geo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        2528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { const pid=String($json.property_id||'').replace(/'/g,\"''\"); const dt=String($json.report_date||''); const ses=Number($json.sessions)||0; const tu=Number($json.total_users)||0; const nu=Number($json.new_users)||0; const spv=Number($json.screen_page_views)||0; const br=Number($json.bounce_rate)||0; const asd=Number($json.avg_session_duration)||0; const er=Number($json.engagement_rate)||0; const egs=Number($json.engaged_sessions)||0; const ca=String($json.collected_at||'').replace(/'/g,\"''\"); return `INSERT INTO ga_daily_overview (property_id,report_date,sessions,total_users,new_users,screen_page_views,bounce_rate,avg_session_duration,engagement_rate,engaged_sessions,collected_at) VALUES ('${pid}','${dt}'::date,${ses}::integer,${tu}::integer,${nu}::integer,${spv}::integer,${br}::numeric,${asd}::numeric,${er}::numeric,${egs}::integer,'${ca}'::timestamptz) ON CONFLICT (property_id,report_date) DO UPDATE SET sessions=EXCLUDED.sessions,total_users=EXCLUDED.total_users,new_users=EXCLUDED.new_users,screen_page_views=EXCLUDED.screen_page_views,bounce_rate=EXCLUDED.bounce_rate,avg_session_duration=EXCLUDED.avg_session_duration,engagement_rate=EXCLUDED.engagement_rate,engaged_sessions=EXCLUDED.engaged_sessions,collected_at=EXCLUDED.collected_at`; })() }}",
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "90211320-be69-4743-818c-6ae2dc2d1c7a",
+      "name": "PG Overview",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2240,
+        1760
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "brSX77VmZxVQKII4",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { const pid=String($json.property_id||'').replace(/'/g,\"''\"); const dt=String($json.report_date||''); const tr=Number($json.total_revenue)||0; const txn=Number($json.transactions)||0; const apr=Number($json.avg_purchase_revenue)||0; const scr=Number($json.session_conversion_rate)||0; const pvr=Number($json.purchase_to_view_rate)||0; const ca=String($json.collected_at||'').replace(/'/g,\"''\"); return `INSERT INTO ga_ecommerce (property_id,report_date,total_revenue,transactions,avg_purchase_revenue,session_conversion_rate,purchase_to_view_rate,collected_at) VALUES ('${pid}','${dt}'::date,${tr}::numeric,${txn}::integer,${apr}::numeric,${scr}::numeric,${pvr}::numeric,'${ca}'::timestamptz) ON CONFLICT (property_id,report_date) DO UPDATE SET total_revenue=EXCLUDED.total_revenue,transactions=EXCLUDED.transactions,avg_purchase_revenue=EXCLUDED.avg_purchase_revenue,session_conversion_rate=EXCLUDED.session_conversion_rate,purchase_to_view_rate=EXCLUDED.purchase_to_view_rate,collected_at=EXCLUDED.collected_at`; })() }}",
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "8ac56220-3a4a-4a12-a496-8dff63fc22e3",
+      "name": "PG Ecommerce",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2240,
+        1952
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "brSX77VmZxVQKII4",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { const pid=String($json.property_id||'').replace(/'/g,\"''\"); const dt=String($json.report_date||''); const cg=String($json.channel_group||'').replace(/'/g,\"''\"); const sm=String($json.source_medium||'').replace(/'/g,\"''\"); const ses=Number($json.sessions)||0; const br=Number($json.bounce_rate)||0; const er=Number($json.engagement_rate)||0; const ca=String($json.collected_at||'').replace(/'/g,\"''\"); return `INSERT INTO ga_traffic_sources (property_id,report_date,channel_group,source_medium,sessions,bounce_rate,engagement_rate,collected_at) VALUES ('${pid}','${dt}'::date,'${cg}','${sm}',${ses}::integer,${br}::numeric,${er}::numeric,'${ca}'::timestamptz) ON CONFLICT (property_id,report_date,channel_group,source_medium) DO UPDATE SET sessions=EXCLUDED.sessions,bounce_rate=EXCLUDED.bounce_rate,engagement_rate=EXCLUDED.engagement_rate,collected_at=EXCLUDED.collected_at`; })() }}",
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "9e1166f5-d3e6-45a8-a461-97823915821d",
+      "name": "PG Traffic",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2240,
+        2144
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "brSX77VmZxVQKII4",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { const pid=String($json.property_id||'').replace(/'/g,\"''\"); const dt=String($json.report_date||''); const pp=String($json.page_path||'').replace(/'/g,\"''\"); const pt=String($json.page_title||'').replace(/'/g,\"''\"); const spv=Number($json.screen_page_views)||0; const asd=Number($json.avg_session_duration)||0; const br=Number($json.bounce_rate)||0; const er=Number($json.engagement_rate)||0; const ca=String($json.collected_at||'').replace(/'/g,\"''\"); return `INSERT INTO ga_top_pages (property_id,report_date,page_path,page_title,screen_page_views,avg_session_duration,bounce_rate,engagement_rate,collected_at) VALUES ('${pid}','${dt}'::date,'${pp}','${pt}',${spv}::integer,${asd}::numeric,${br}::numeric,${er}::numeric,'${ca}'::timestamptz) ON CONFLICT (property_id,report_date,page_path) DO UPDATE SET page_title=EXCLUDED.page_title,screen_page_views=EXCLUDED.screen_page_views,avg_session_duration=EXCLUDED.avg_session_duration,bounce_rate=EXCLUDED.bounce_rate,engagement_rate=EXCLUDED.engagement_rate,collected_at=EXCLUDED.collected_at`; })() }}",
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "ce30eeb9-cc8e-4e52-a9a9-ad17899f3ffd",
+      "name": "PG Pages",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2240,
+        2336
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "brSX77VmZxVQKII4",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { const pid=String($json.property_id||'').replace(/'/g,\"''\"); const dt=String($json.report_date||''); const dev=String($json.device_category||'').replace(/'/g,\"''\"); const cnt=String($json.country||'').replace(/'/g,\"''\"); const ses=Number($json.sessions)||0; const tu=Number($json.total_users)||0; const ca=String($json.collected_at||'').replace(/'/g,\"''\"); return `INSERT INTO ga_device_geo (property_id,report_date,device_category,country,sessions,total_users,collected_at) VALUES ('${pid}','${dt}'::date,'${dev}','${cnt}',${ses}::integer,${tu}::integer,'${ca}'::timestamptz) ON CONFLICT (property_id,report_date,device_category,country) DO UPDATE SET sessions=EXCLUDED.sessions,total_users=EXCLUDED.total_users,collected_at=EXCLUDED.collected_at`; })() }}",
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "3b6c9fed-7fd7-41a5-97ec-1b88b3506979",
+      "name": "PG Device Geo",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2240,
+        2528
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "brSX77VmZxVQKII4",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "id": "046fd59e-2920-47f7-bca0-20bacb05c57c",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2464,
+        2096
+      ]
+    },
+    {
+      "id": "f1a2b3c4-d5e6-7890-abcd-1234567890ab",
+      "name": "PG Log Completion",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2724,
+        2096
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "brSX77VmZxVQKII4",
+          "name": "Postgres account 2"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => {   const pid = String($('Webhook').first().json.body.property_id || '').replace(/'/g, \"''\");   return `INSERT INTO refresh_log (property_id, status) VALUES ('${pid}', 'done')`; })() }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "aabb1122-3344-5566-7788-99aabbccddee",
+      "name": "Limit to 1",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        2594,
+        2096
+      ],
+      "parameters": {
+        "maxItems": 1
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "PG Upsert Property",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PG Upsert Property": {
+      "main": [
+        [
+          {
+            "node": "GA4 Overview",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GA4 Ecommerce",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GA4 Traffic Sources",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GA4 Top Pages",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GA4 Device Geo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GA4 Overview": {
+      "main": [
+        [
+          {
+            "node": "Transform Overview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GA4 Ecommerce": {
+      "main": [
+        [
+          {
+            "node": "Transform Ecommerce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GA4 Traffic Sources": {
+      "main": [
+        [
+          {
+            "node": "Transform Traffic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GA4 Top Pages": {
+      "main": [
+        [
+          {
+            "node": "Transform Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GA4 Device Geo": {
+      "main": [
+        [
+          {
+            "node": "Transform Device Geo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Overview": {
+      "main": [
+        [
+          {
+            "node": "PG Overview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Ecommerce": {
+      "main": [
+        [
+          {
+            "node": "PG Ecommerce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Traffic": {
+      "main": [
+        [
+          {
+            "node": "PG Traffic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Pages": {
+      "main": [
+        [
+          {
+            "node": "PG Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Device Geo": {
+      "main": [
+        [
+          {
+            "node": "PG Device Geo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PG Overview": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PG Ecommerce": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Results": {
+      "main": [
+        [
+          {
+            "node": "Limit to 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PG Traffic": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "PG Pages": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "PG Device Geo": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Limit to 1": {
+      "main": [
+        [
+          {
+            "node": "PG Log Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "fbcc6c63-d908-4e4d-936c-b01a16cc18b2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "17240e28b0afe9806b688fca169909432314087a0802b61d1ea5836d0dcba2a4"
+  },
+  "id": "OJkWubxCDmwNPgKc",
+  "tags": []
+}

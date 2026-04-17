@@ -21,7 +21,16 @@
       "Bash(cp /tmp/mktdash/postcss.config.mjs \"D:\\\\DEV\\\\marketting-dashboard/\")",
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('D:\\\\\\\\DEV\\\\\\\\marketting-dashboard\\\\\\\\n8n-workflow-ga4.json', 'utf8'\\)\\); console.log\\('JSON valid'\\)\")",
+      "Read(//d D:/DEV/**)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('n8n-workflow-ga4.json','utf8'\\)\\);console.log\\('JSON valid'\\)\")",
+      "Bash(node -e \"try{JSON.parse\\(require\\('fs'\\).readFileSync\\('D:/DEV/marketting-dashboard/n8n-workflow-ga4.json','utf8'\\)\\);console.log\\('valid'\\)}catch\\(e\\){console.error\\(e.message\\)}\")",
+      "Bash(npx --prefix \"D:/DEV/marketting-dashboard\" tsc --noEmit)",
+      "Bash(node -e ' *)",
+      "Bash(node fix-n8n.mjs)",
+      "Bash(del fix-n8n.mjs)",
+      "mcp__e32acc00-3d25-46f3-b6af-1aeeffdb44d3__get_suggested_nodes"
     ]
   }
 }

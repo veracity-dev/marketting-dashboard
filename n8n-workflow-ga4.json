@@ -9,15 +9,29 @@
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [-1000, 400],
+      "position": [-1200, 400],
       "parameters": {
         "httpMethod": "POST",
         "path": "ga-analytics",
         "responseMode": "onReceived",
         "options": {
           "responseCode": { "values": { "responseCode": "customCode", "customCode": 202 } },
-          "responseData": "{\"status\": \"accepted\", \"message\": \"GA4 pipeline started. Pass callback_url in body to receive a completion signal.\"}"
+          "responseData": "{\"status\": \"accepted\", \"message\": \"GA4 pipeline started.\"}"
         }
+      }
+    },
+
+    {
+      "id": "b1000014-0014-0014-0014-000000000014",
+      "name": "PG Upsert Property",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-900, 400],
+      "credentials": { "postgres": { "id": "", "name": "Postgres account" } },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { const pid = String($('Webhook').first().json.body.property_id || '').replace(/'/g, \"''\"); const name = String($('Webhook').first().json.body.display_name || pid).replace(/,/g, '').replace(/'/g, \"''\"); if (!pid) return 'SELECT 1'; return `INSERT INTO ga_properties (property_id, display_name, last_synced) VALUES ('${pid}', '${name}', NOW()) ON CONFLICT (property_id) DO UPDATE SET display_name = CASE WHEN EXCLUDED.display_name = '' THEN ga_properties.display_name ELSE EXCLUDED.display_name END, last_synced = NOW()`; })() }}",
+        "options": {}
       }
     },
 
@@ -34,10 +48,10 @@
         "resource": "report",
         "operation": "get",
         "propertyType": "ga4",
-        "propertyId": { "__rl": true, "mode": "list", "value": "523852603", "cachedResultName": "Veracity AI" },
+        "propertyId": { "__rl": true, "mode": "id", "value": "={{ $('Webhook').first().json.body.property_id }}" },
         "dateRange": "custom",
-        "startDate": "={{ $json.body.start_date }}",
-        "endDate": "={{ $json.body.end_date }}",
+        "startDate": "={{ $('Webhook').first().json.body.start_date }}",
+        "endDate":   "={{ $('Webhook').first().json.body.end_date }}",
         "metricsGA4": {
           "metricValues": [
             { "listName": "sessions" },
@@ -70,10 +84,10 @@
         "resource": "report",
         "operation": "get",
         "propertyType": "ga4",
-        "propertyId": { "__rl": true, "mode": "list", "value": "523852603", "cachedResultName": "Veracity AI" },
+        "propertyId": { "__rl": true, "mode": "id", "value": "={{ $('Webhook').first().json.body.property_id }}" },
         "dateRange": "custom",
-        "startDate": "={{ $json.body.start_date }}",
-        "endDate": "={{ $json.body.end_date }}",
+        "startDate": "={{ $('Webhook').first().json.body.start_date }}",
+        "endDate":   "={{ $('Webhook').first().json.body.end_date }}",
         "metricsGA4": {
           "metricValues": [
             { "listName": "other", "name": "totalRevenue" },
@@ -103,10 +117,10 @@
         "resource": "report",
         "operation": "get",
         "propertyType": "ga4",
-        "propertyId": { "__rl": true, "mode": "list", "value": "523852603", "cachedResultName": "Veracity AI" },
+        "propertyId": { "__rl": true, "mode": "id", "value": "={{ $('Webhook').first().json.body.property_id }}" },
         "dateRange": "custom",
-        "startDate": "={{ $json.body.start_date }}",
-        "endDate": "={{ $json.body.end_date }}",
+        "startDate": "={{ $('Webhook').first().json.body.start_date }}",
+        "endDate":   "={{ $('Webhook').first().json.body.end_date }}",
         "metricsGA4": {
           "metricValues": [
             { "listName": "sessions" },
@@ -140,10 +154,10 @@
         "resource": "report",
         "operation": "get",
         "propertyType": "ga4",
-        "propertyId": { "__rl": true, "mode": "list", "value": "523852603", "cachedResultName": "Veracity AI" },
+        "propertyId": { "__rl": true, "mode": "id", "value": "={{ $('Webhook').first().json.body.property_id }}" },
         "dateRange": "custom",
-        "startDate": "={{ $json.body.start_date }}",
-        "endDate": "={{ $json.body.end_date }}",
+        "startDate": "={{ $('Webhook').first().json.body.start_date }}",
+        "endDate":   "={{ $('Webhook').first().json.body.end_date }}",
         "metricsGA4": {
           "metricValues": [
             { "listName": "screenPageViews" },
@@ -178,10 +192,10 @@
         "resource": "report",
         "operation": "get",
         "propertyType": "ga4",
-        "propertyId": { "__rl": true, "mode": "list", "value": "523852603", "cachedResultName": "Veracity AI" },
+        "propertyId": { "__rl": true, "mode": "id", "value": "={{ $('Webhook').first().json.body.property_id }}" },
         "dateRange": "custom",
-        "startDate": "={{ $json.body.start_date }}",
-        "endDate": "={{ $json.body.end_date }}",
+        "startDate": "={{ $('Webhook').first().json.body.start_date }}",
+        "endDate":   "={{ $('Webhook').first().json.body.end_date }}",
         "metricsGA4": {
           "metricValues": [
             { "listName": "sessions" },
@@ -209,7 +223,7 @@
       "position": [-200, 0],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id: '523852603',\n    report_date,\n    sessions: Number(d.sessions) || 0,\n    total_users: Number(d.totalUsers) || 0,\n    new_users: Number(d.newUsers) || 0,\n    screen_page_views: Number(d.screenPageViews) || 0,\n    bounce_rate: Number(d.bounceRate) || 0,\n    avg_session_duration: Number(d.averageSessionDuration) || 0,\n    engagement_rate: Number(d.engagementRate) || 0,\n    engaged_sessions: Number(d.engagedSessions) || 0,\n    collected_at\n  }};\n});"
+        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nconst property_id = String($('Webhook').first().json.body.property_id);\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id,\n    report_date,\n    sessions: Number(d.sessions) || 0,\n    total_users: Number(d.totalUsers) || 0,\n    new_users: Number(d.newUsers) || 0,\n    screen_page_views: Number(d.screenPageViews) || 0,\n    bounce_rate: Number(d.bounceRate) || 0,\n    avg_session_duration: Number(d.averageSessionDuration) || 0,\n    engagement_rate: Number(d.engagementRate) || 0,\n    engaged_sessions: Number(d.engagedSessions) || 0,\n    collected_at\n  }};\n});"
       }
     },
 
@@ -221,7 +235,7 @@
       "position": [-200, 200],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id: '523852603',\n    report_date,\n    total_revenue: Number(d.totalRevenue) || 0,\n    transactions: Number(d.transactions) || 0,\n    avg_purchase_revenue: Number(d.averagePurchaseRevenue) || 0,\n    session_conversion_rate: Number(d.sessionConversionRate) || 0,\n    purchase_to_view_rate: Number(d.purchaseToViewRate) || 0,\n    collected_at\n  }};\n});"
+        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nconst property_id = String($('Webhook').first().json.body.property_id);\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id,\n    report_date,\n    total_revenue: Number(d.totalRevenue) || 0,\n    transactions: Number(d.transactions) || 0,\n    avg_purchase_revenue: Number(d.averagePurchaseRevenue) || 0,\n    session_conversion_rate: Number(d.sessionConversionRate) || 0,\n    purchase_to_view_rate: Number(d.purchaseToViewRate) || 0,\n    collected_at\n  }};\n});"
       }
     },
 
@@ -233,7 +247,7 @@
       "position": [-200, 400],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id: '523852603',\n    report_date,\n    channel_group: String(d.sessionDefaultChannelGroup || '').replace(/,/g, ''),\n    source_medium: String(d.sourceMedium || '').replace(/,/g, ''),\n    sessions: Number(d.sessions) || 0,\n    bounce_rate: Number(d.bounceRate) || 0,\n    engagement_rate: Number(d.engagementRate) || 0,\n    collected_at\n  }};\n});"
+        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nconst property_id = String($('Webhook').first().json.body.property_id);\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id,\n    report_date,\n    channel_group: String(d.sessionDefaultChannelGroup || '').replace(/,/g, ''),\n    source_medium: String(d.sourceMedium || '').replace(/,/g, ''),\n    sessions: Number(d.sessions) || 0,\n    bounce_rate: Number(d.bounceRate) || 0,\n    engagement_rate: Number(d.engagementRate) || 0,\n    collected_at\n  }};\n});"
       }
     },
 
@@ -245,7 +259,7 @@
       "position": [-200, 600],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id: '523852603',\n    report_date,\n    page_path: String(d.pagePath || '').replace(/,/g, ''),\n    page_title: String(d.pageTitle || '').replace(/,/g, ''),\n    screen_page_views: Number(d.screenPageViews) || 0,\n    avg_session_duration: Number(d.averageSessionDuration) || 0,\n    bounce_rate: Number(d.bounceRate) || 0,\n    engagement_rate: Number(d.engagementRate) || 0,\n    collected_at\n  }};\n});"
+        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nconst property_id = String($('Webhook').first().json.body.property_id);\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id,\n    report_date,\n    page_path: String(d.pagePath || '').replace(/,/g, ''),\n    page_title: String(d.pageTitle || '').replace(/,/g, ''),\n    screen_page_views: Number(d.screenPageViews) || 0,\n    avg_session_duration: Number(d.averageSessionDuration) || 0,\n    bounce_rate: Number(d.bounceRate) || 0,\n    engagement_rate: Number(d.engagementRate) || 0,\n    collected_at\n  }};\n});"
       }
     },
 
@@ -257,7 +271,7 @@
       "position": [-200, 800],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id: '523852603',\n    report_date,\n    device_category: String(d.deviceCategory || '').replace(/,/g, ''),\n    country: String(d.country || '').replace(/,/g, ''),\n    sessions: Number(d.sessions) || 0,\n    total_users: Number(d.totalUsers) || 0,\n    collected_at\n  }};\n});"
+        "jsCode": "const items = $input.all();\nconst collected_at = new Date().toISOString();\nconst property_id = String($('Webhook').first().json.body.property_id);\nreturn items.map(item => {\n  const d = item.json;\n  const raw = String(d.date || '');\n  const report_date = raw.length === 8\n    ? raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8)\n    : raw;\n  return { json: {\n    property_id,\n    report_date,\n    device_category: String(d.deviceCategory || '').replace(/,/g, ''),\n    country: String(d.country || '').replace(/,/g, ''),\n    sessions: Number(d.sessions) || 0,\n    total_users: Number(d.totalUsers) || 0,\n    collected_at\n  }};\n});"
       }
     },
 
@@ -366,7 +380,7 @@
       "position": [900, 400],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// If the caller provided a callback_url in the webhook body, forward a completion signal.\n// Otherwise return nothing (workflow ends silently).\nconst callbackUrl = $('Webhook').first().json.body?.callback_url;\nif (!callbackUrl) return [];\nreturn [{ json: {\n  callback_url: callbackUrl,\n  status: 'success',\n  refreshed_at: new Date().toISOString(),\n  message: 'GA4 pipeline complete'\n}}];"
+        "jsCode": "const callbackUrl = $('Webhook').first().json.body?.callback_url;\nif (!callbackUrl) return [];\nreturn [{ json: {\n  callback_url: callbackUrl,\n  status: 'success',\n  refreshed_at: new Date().toISOString(),\n  property_id: $('Webhook').first().json.body?.property_id,\n  message: 'GA4 pipeline complete'\n}}];"
       }
     },
 
@@ -381,7 +395,7 @@
         "url": "={{ $json.callback_url }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ status: $json.status, refreshed_at: $json.refreshed_at, message: $json.message }) }}",
+        "jsonBody": "={{ JSON.stringify({ status: $json.status, refreshed_at: $json.refreshed_at, property_id: $json.property_id, message: $json.message }) }}",
         "options": {}
       }
     }
@@ -389,6 +403,9 @@
 
   "connections": {
     "Webhook": {
+      "main": [[{ "node": "PG Upsert Property", "type": "main", "index": 0 }]]
+    },
+    "PG Upsert Property": {
       "main": [[
         { "node": "GA4 Overview",        "type": "main", "index": 0 },
         { "node": "GA4 Ecommerce",       "type": "main", "index": 0 },
@@ -412,7 +429,7 @@
     "PG Traffic":    { "main": [[{ "node": "Merge Results", "type": "main", "index": 2 }]] },
     "PG Pages":      { "main": [[{ "node": "Merge Results", "type": "main", "index": 3 }]] },
     "PG Device Geo": { "main": [[{ "node": "Merge Results", "type": "main", "index": 4 }]] },
-    "Merge Results":   { "main": [[{ "node": "Check Callback", "type": "main", "index": 0 }]] },
-    "Check Callback":  { "main": [[{ "node": "Notify Complete", "type": "main", "index": 0 }]] }
+    "Merge Results":  { "main": [[{ "node": "Check Callback", "type": "main", "index": 0 }]] },
+    "Check Callback": { "main": [[{ "node": "Notify Complete", "type": "main", "index": 0 }]] }
   }
 }
