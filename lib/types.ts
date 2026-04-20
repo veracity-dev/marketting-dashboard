@@ -109,4 +109,80 @@ export interface GAProperty {
 
 export type RefreshStatus = 'idle' | 'triggering' | 'polling' | 'done' | 'error'
 
-export type DataSource = 'ga4' | 'google_ads' | 'meta' | 'linkedin'
+export type DataSource = 'ga4' | 'gsc' | 'google_ads' | 'meta' | 'linkedin'
+
+// ── Google Search Console types ──────────────────────────────────────────────
+
+export interface GSCDailyOverview {
+  id: number
+  site_url: string
+  report_date: string
+  clicks: number
+  impressions: number
+  ctr: number        // 0..1
+  position: number   // avg SERP position
+  collected_at: string
+}
+
+export interface GSCQuery {
+  id: number
+  site_url: string
+  report_date: string
+  query: string
+  clicks: number
+  impressions: number
+  ctr: number
+  position: number
+  collected_at: string
+}
+
+export interface GSCPage {
+  id: number
+  site_url: string
+  report_date: string
+  page: string
+  clicks: number
+  impressions: number
+  ctr: number
+  position: number
+  collected_at: string
+}
+
+export interface GSCCountry {
+  id: number
+  site_url: string
+  report_date: string
+  country: string
+  clicks: number
+  impressions: number
+  ctr: number
+  position: number
+  collected_at: string
+}
+
+export interface GSCDevice {
+  id: number
+  site_url: string
+  report_date: string
+  device: string
+  clicks: number
+  impressions: number
+  ctr: number
+  position: number
+  collected_at: string
+}
+
+export interface GSCData {
+  overview: GSCDailyOverview[]
+  queries: GSCQuery[]
+  pages: GSCPage[]
+  countries: GSCCountry[]
+  devices: GSCDevice[]
+  lastCollectedAt: string | null
+}
+
+export interface GSCSite {
+  site_url: string
+  permission_level: string
+  last_synced: string | null
+}

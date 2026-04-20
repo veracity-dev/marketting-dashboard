@@ -1,0 +1,392 @@
+{
+  "name": "gsc-fetch-data",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gsc-analytics",
+        "options": {
+          "responseCode": {
+            "values": { "responseCode": "customCode", "customCode": 202 }
+          },
+          "responseData": "{\"status\": \"accepted\", \"message\": \"GSC pipeline started.\"}"
+        }
+      },
+      "id": "webhook01-aaaa-bbbb-cccc-webhook010000",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [400, 1000],
+      "webhookId": "gsc-analytics-hook"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { const su = String($('Webhook').first().json.body.site_url || '').replace(/'/g, \"''\"); const pl = String($('Webhook').first().json.body.permission_level || '').replace(/'/g, \"''\"); if (!su) return 'SELECT 1'; return `INSERT INTO gsc_sites (site_url, permission_level, last_synced) VALUES ('${su}', '${pl}', NOW()) ON CONFLICT (site_url) DO UPDATE SET permission_level = CASE WHEN EXCLUDED.permission_level = '' THEN gsc_sites.permission_level ELSE EXCLUDED.permission_level END, last_synced = NOW()`; })() }}",
+        "options": {}
+      },
+      "id": "upsite001-aaaa-bbbb-cccc-upsite001000",
+      "name": "PG Upsert Site",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [620, 1000],
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://searchconsole.googleapis.com/webmasters/v3/sites/{{ encodeURIComponent($('Webhook').first().json.body.site_url) }}/searchAnalytics/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ startDate: $('Webhook').first().json.body.start_date, endDate: $('Webhook').first().json.body.end_date, dimensions: ['date'], rowLimit: 25000 }) }}",
+        "options": {}
+      },
+      "id": "gsc0over-aaaa-bbbb-cccc-gsc0overvw00",
+      "name": "GSC Overview",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [840, 600],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_GSC_OAUTH2_CRED_ID",
+          "name": "Google Search Console OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://searchconsole.googleapis.com/webmasters/v3/sites/{{ encodeURIComponent($('Webhook').first().json.body.site_url) }}/searchAnalytics/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ startDate: $('Webhook').first().json.body.start_date, endDate: $('Webhook').first().json.body.end_date, dimensions: ['date','query'], rowLimit: 25000 }) }}",
+        "options": {}
+      },
+      "id": "gsc0quer-aaaa-bbbb-cccc-gsc0queries0",
+      "name": "GSC Queries",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [840, 800],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_GSC_OAUTH2_CRED_ID",
+          "name": "Google Search Console OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://searchconsole.googleapis.com/webmasters/v3/sites/{{ encodeURIComponent($('Webhook').first().json.body.site_url) }}/searchAnalytics/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ startDate: $('Webhook').first().json.body.start_date, endDate: $('Webhook').first().json.body.end_date, dimensions: ['date','page'], rowLimit: 25000 }) }}",
+        "options": {}
+      },
+      "id": "gsc0page-aaaa-bbbb-cccc-gsc0pages000",
+      "name": "GSC Pages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [840, 1000],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_GSC_OAUTH2_CRED_ID",
+          "name": "Google Search Console OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://searchconsole.googleapis.com/webmasters/v3/sites/{{ encodeURIComponent($('Webhook').first().json.body.site_url) }}/searchAnalytics/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ startDate: $('Webhook').first().json.body.start_date, endDate: $('Webhook').first().json.body.end_date, dimensions: ['date','country'], rowLimit: 25000 }) }}",
+        "options": {}
+      },
+      "id": "gsc0cntr-aaaa-bbbb-cccc-gsc0country0",
+      "name": "GSC Countries",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [840, 1200],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_GSC_OAUTH2_CRED_ID",
+          "name": "Google Search Console OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://searchconsole.googleapis.com/webmasters/v3/sites/{{ encodeURIComponent($('Webhook').first().json.body.site_url) }}/searchAnalytics/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ startDate: $('Webhook').first().json.body.start_date, endDate: $('Webhook').first().json.body.end_date, dimensions: ['date','device'], rowLimit: 25000 }) }}",
+        "options": {}
+      },
+      "id": "gsc0devi-aaaa-bbbb-cccc-gsc0device00",
+      "name": "GSC Devices",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [840, 1400],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_GSC_OAUTH2_CRED_ID",
+          "name": "Google Search Console OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst site_url = String($('Webhook').first().json.body.site_url);\nconst collected_at = new Date().toISOString();\nconst rows = items[0]?.json?.rows || [];\nreturn rows.map(r => ({ json: {\n  site_url,\n  report_date: String(r.keys[0]),\n  clicks: Number(r.clicks) || 0,\n  impressions: Number(r.impressions) || 0,\n  ctr: Number(r.ctr) || 0,\n  position: Number(r.position) || 0,\n  collected_at\n}}));"
+      },
+      "id": "xf000over-aaaa-bbbb-cccc-xf000overvw0",
+      "name": "Transform Overview",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1060, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst site_url = String($('Webhook').first().json.body.site_url);\nconst collected_at = new Date().toISOString();\nconst rows = items[0]?.json?.rows || [];\nreturn rows.map(r => ({ json: {\n  site_url,\n  report_date: String(r.keys[0]),\n  query: String(r.keys[1] || '').replace(/'/g, \"''\"),\n  clicks: Number(r.clicks) || 0,\n  impressions: Number(r.impressions) || 0,\n  ctr: Number(r.ctr) || 0,\n  position: Number(r.position) || 0,\n  collected_at\n}}));"
+      },
+      "id": "xf000quer-aaaa-bbbb-cccc-xf000queries",
+      "name": "Transform Queries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1060, 800]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst site_url = String($('Webhook').first().json.body.site_url);\nconst collected_at = new Date().toISOString();\nconst rows = items[0]?.json?.rows || [];\nreturn rows.map(r => ({ json: {\n  site_url,\n  report_date: String(r.keys[0]),\n  page: String(r.keys[1] || ''),\n  clicks: Number(r.clicks) || 0,\n  impressions: Number(r.impressions) || 0,\n  ctr: Number(r.ctr) || 0,\n  position: Number(r.position) || 0,\n  collected_at\n}}));"
+      },
+      "id": "xf000page-aaaa-bbbb-cccc-xf000pages00",
+      "name": "Transform Pages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1060, 1000]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst site_url = String($('Webhook').first().json.body.site_url);\nconst collected_at = new Date().toISOString();\nconst rows = items[0]?.json?.rows || [];\nreturn rows.map(r => ({ json: {\n  site_url,\n  report_date: String(r.keys[0]),\n  country: String(r.keys[1] || ''),\n  clicks: Number(r.clicks) || 0,\n  impressions: Number(r.impressions) || 0,\n  ctr: Number(r.ctr) || 0,\n  position: Number(r.position) || 0,\n  collected_at\n}}));"
+      },
+      "id": "xf000cntr-aaaa-bbbb-cccc-xf000country",
+      "name": "Transform Countries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1060, 1200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst site_url = String($('Webhook').first().json.body.site_url);\nconst collected_at = new Date().toISOString();\nconst rows = items[0]?.json?.rows || [];\nreturn rows.map(r => ({ json: {\n  site_url,\n  report_date: String(r.keys[0]),\n  device: String(r.keys[1] || '').toLowerCase(),\n  clicks: Number(r.clicks) || 0,\n  impressions: Number(r.impressions) || 0,\n  ctr: Number(r.ctr) || 0,\n  position: Number(r.position) || 0,\n  collected_at\n}}));"
+      },
+      "id": "xf000devi-aaaa-bbbb-cccc-xf000devices",
+      "name": "Transform Devices",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1060, 1400]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { const su=String($json.site_url||'').replace(/'/g,\"''\"); const dt=String($json.report_date||''); const c=Number($json.clicks)||0; const i=Number($json.impressions)||0; const r=Number($json.ctr)||0; const p=Number($json.position)||0; const ca=String($json.collected_at||'').replace(/'/g,\"''\"); return `INSERT INTO gsc_daily_overview (site_url,report_date,clicks,impressions,ctr,position,collected_at) VALUES ('${su}','${dt}'::date,${c}::integer,${i}::integer,${r}::numeric,${p}::numeric,'${ca}'::timestamptz) ON CONFLICT (site_url,report_date) DO UPDATE SET clicks=EXCLUDED.clicks,impressions=EXCLUDED.impressions,ctr=EXCLUDED.ctr,position=EXCLUDED.position,collected_at=EXCLUDED.collected_at`; })() }}",
+        "options": { "queryBatching": "independently" }
+      },
+      "id": "pg0ovr00-aaaa-bbbb-cccc-pg0overview0",
+      "name": "PG Overview",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1280, 600],
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { const su=String($json.site_url||'').replace(/'/g,\"''\"); const dt=String($json.report_date||''); const q=String($json.query||'').replace(/'/g,\"''\"); const c=Number($json.clicks)||0; const i=Number($json.impressions)||0; const r=Number($json.ctr)||0; const p=Number($json.position)||0; const ca=String($json.collected_at||'').replace(/'/g,\"''\"); return `INSERT INTO gsc_queries (site_url,report_date,query,clicks,impressions,ctr,position,collected_at) VALUES ('${su}','${dt}'::date,'${q}',${c}::integer,${i}::integer,${r}::numeric,${p}::numeric,'${ca}'::timestamptz) ON CONFLICT (site_url,report_date,query) DO UPDATE SET clicks=EXCLUDED.clicks,impressions=EXCLUDED.impressions,ctr=EXCLUDED.ctr,position=EXCLUDED.position,collected_at=EXCLUDED.collected_at`; })() }}",
+        "options": { "queryBatching": "independently" }
+      },
+      "id": "pg0qry00-aaaa-bbbb-cccc-pg0queries00",
+      "name": "PG Queries",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1280, 800],
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { const su=String($json.site_url||'').replace(/'/g,\"''\"); const dt=String($json.report_date||''); const pg=String($json.page||'').replace(/'/g,\"''\"); const c=Number($json.clicks)||0; const i=Number($json.impressions)||0; const r=Number($json.ctr)||0; const p=Number($json.position)||0; const ca=String($json.collected_at||'').replace(/'/g,\"''\"); return `INSERT INTO gsc_pages (site_url,report_date,page,clicks,impressions,ctr,position,collected_at) VALUES ('${su}','${dt}'::date,'${pg}',${c}::integer,${i}::integer,${r}::numeric,${p}::numeric,'${ca}'::timestamptz) ON CONFLICT (site_url,report_date,page) DO UPDATE SET clicks=EXCLUDED.clicks,impressions=EXCLUDED.impressions,ctr=EXCLUDED.ctr,position=EXCLUDED.position,collected_at=EXCLUDED.collected_at`; })() }}",
+        "options": { "queryBatching": "independently" }
+      },
+      "id": "pg0pg000-aaaa-bbbb-cccc-pg0pages0000",
+      "name": "PG Pages",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1280, 1000],
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { const su=String($json.site_url||'').replace(/'/g,\"''\"); const dt=String($json.report_date||''); const co=String($json.country||'').replace(/'/g,\"''\"); const c=Number($json.clicks)||0; const i=Number($json.impressions)||0; const r=Number($json.ctr)||0; const p=Number($json.position)||0; const ca=String($json.collected_at||'').replace(/'/g,\"''\"); return `INSERT INTO gsc_countries (site_url,report_date,country,clicks,impressions,ctr,position,collected_at) VALUES ('${su}','${dt}'::date,'${co}',${c}::integer,${i}::integer,${r}::numeric,${p}::numeric,'${ca}'::timestamptz) ON CONFLICT (site_url,report_date,country) DO UPDATE SET clicks=EXCLUDED.clicks,impressions=EXCLUDED.impressions,ctr=EXCLUDED.ctr,position=EXCLUDED.position,collected_at=EXCLUDED.collected_at`; })() }}",
+        "options": { "queryBatching": "independently" }
+      },
+      "id": "pg0cn000-aaaa-bbbb-cccc-pg0country00",
+      "name": "PG Countries",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1280, 1200],
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { const su=String($json.site_url||'').replace(/'/g,\"''\"); const dt=String($json.report_date||''); const dv=String($json.device||'').replace(/'/g,\"''\"); const c=Number($json.clicks)||0; const i=Number($json.impressions)||0; const r=Number($json.ctr)||0; const p=Number($json.position)||0; const ca=String($json.collected_at||'').replace(/'/g,\"''\"); return `INSERT INTO gsc_devices (site_url,report_date,device,clicks,impressions,ctr,position,collected_at) VALUES ('${su}','${dt}'::date,'${dv}',${c}::integer,${i}::integer,${r}::numeric,${p}::numeric,'${ca}'::timestamptz) ON CONFLICT (site_url,report_date,device) DO UPDATE SET clicks=EXCLUDED.clicks,impressions=EXCLUDED.impressions,ctr=EXCLUDED.ctr,position=EXCLUDED.position,collected_at=EXCLUDED.collected_at`; })() }}",
+        "options": { "queryBatching": "independently" }
+      },
+      "id": "pg0dv000-aaaa-bbbb-cccc-pg0devices00",
+      "name": "PG Devices",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1280, 1400],
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": { "numberInputs": 5 },
+      "id": "merge000-aaaa-bbbb-cccc-merge0000000",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1500, 1000]
+    },
+    {
+      "parameters": { "maxItems": 1 },
+      "id": "limit001-aaaa-bbbb-cccc-limit0010000",
+      "name": "Limit to 1",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [1700, 1000]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { const su = String($('Webhook').first().json.body.site_url || '').replace(/'/g, \"''\"); return `INSERT INTO refresh_log (property_id, status) VALUES ('${su}', 'done')`; })() }}",
+        "options": {}
+      },
+      "id": "pglog001-aaaa-bbbb-cccc-pglogcomp001",
+      "name": "PG Log Completion",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1900, 1000],
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "errortrg-aaaa-bbbb-cccc-errortrigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [400, 1700]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => { let su=''; try { su = String($('Webhook').first().json.body.site_url || ''); } catch(e) { su = 'unknown'; } su = su.replace(/'/g, \"''\"); let errMsg=''; try { errMsg = String($json.execution.error.message || 'Unknown error'); } catch(e) { errMsg = 'Unknown error'; } errMsg = errMsg.replace(/'/g,\"''\").substring(0,500); return `INSERT INTO refresh_log (property_id, status, error_message) VALUES ('${su}', 'error', '${errMsg}')`; })() }}",
+        "options": {}
+      },
+      "id": "pglogerr-aaaa-bbbb-cccc-pglogerror01",
+      "name": "PG Log Error",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [620, 1700],
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "PG Upsert Site", "type": "main", "index": 0 }]]
+    },
+    "PG Upsert Site": {
+      "main": [[
+        { "node": "GSC Overview",  "type": "main", "index": 0 },
+        { "node": "GSC Queries",   "type": "main", "index": 0 },
+        { "node": "GSC Pages",     "type": "main", "index": 0 },
+        { "node": "GSC Countries", "type": "main", "index": 0 },
+        { "node": "GSC Devices",   "type": "main", "index": 0 }
+      ]]
+    },
+    "GSC Overview":  { "main": [[{ "node": "Transform Overview",  "type": "main", "index": 0 }]] },
+    "GSC Queries":   { "main": [[{ "node": "Transform Queries",   "type": "main", "index": 0 }]] },
+    "GSC Pages":     { "main": [[{ "node": "Transform Pages",     "type": "main", "index": 0 }]] },
+    "GSC Countries": { "main": [[{ "node": "Transform Countries", "type": "main", "index": 0 }]] },
+    "GSC Devices":   { "main": [[{ "node": "Transform Devices",   "type": "main", "index": 0 }]] },
+    "Transform Overview":  { "main": [[{ "node": "PG Overview",  "type": "main", "index": 0 }]] },
+    "Transform Queries":   { "main": [[{ "node": "PG Queries",   "type": "main", "index": 0 }]] },
+    "Transform Pages":     { "main": [[{ "node": "PG Pages",     "type": "main", "index": 0 }]] },
+    "Transform Countries": { "main": [[{ "node": "PG Countries", "type": "main", "index": 0 }]] },
+    "Transform Devices":   { "main": [[{ "node": "PG Devices",   "type": "main", "index": 0 }]] },
+    "PG Overview":  { "main": [[{ "node": "Merge Results", "type": "main", "index": 0 }]] },
+    "PG Queries":   { "main": [[{ "node": "Merge Results", "type": "main", "index": 1 }]] },
+    "PG Pages":     { "main": [[{ "node": "Merge Results", "type": "main", "index": 2 }]] },
+    "PG Countries": { "main": [[{ "node": "Merge Results", "type": "main", "index": 3 }]] },
+    "PG Devices":   { "main": [[{ "node": "Merge Results", "type": "main", "index": 4 }]] },
+    "Merge Results": { "main": [[{ "node": "Limit to 1", "type": "main", "index": 0 }]] },
+    "Limit to 1":    { "main": [[{ "node": "PG Log Completion", "type": "main", "index": 0 }]] },
+    "Error Trigger": { "main": [[{ "node": "PG Log Error", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "active": false,
+  "tags": []
+}

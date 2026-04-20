@@ -30,7 +30,12 @@
       "Bash(node -e ' *)",
       "Bash(node fix-n8n.mjs)",
       "Bash(del fix-n8n.mjs)",
-      "mcp__e32acc00-3d25-46f3-b6af-1aeeffdb44d3__get_suggested_nodes"
+      "mcp__e32acc00-3d25-46f3-b6af-1aeeffdb44d3__get_suggested_nodes",
+      "WebSearch",
+      "WebFetch(domain:communitynodes.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:community.n8n.io)",
+      "WebFetch(domain:marvomatic.com)"
     ]
   }
 }

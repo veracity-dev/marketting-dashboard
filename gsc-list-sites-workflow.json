@@ -1,0 +1,75 @@
+{
+  "name": "gsc-list-sites",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gsc-sites",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "11111111-aaaa-bbbb-cccc-111111111111",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [600, 300],
+      "webhookId": "gsc-sites-listing-hook"
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "url": "https://www.googleapis.com/webmasters/v3/sites",
+        "options": {}
+      },
+      "id": "22222222-aaaa-bbbb-cccc-222222222222",
+      "name": "List GSC Sites",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [820, 300],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_GSC_OAUTH2_CRED_ID",
+          "name": "Google Search Console OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Flatten GSC sites list into a clean array for the dashboard\nconst input = $input.first().json;\nconst entries = input.siteEntry || [];\n\nconst sites = entries.map(s => ({\n  site_url: s.siteUrl,\n  permission_level: s.permissionLevel || ''\n}));\n\nreturn [{ json: { sites } }];"
+      },
+      "id": "33333333-aaaa-bbbb-cccc-333333333333",
+      "name": "Flatten Sites",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1040, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "44444444-aaaa-bbbb-cccc-444444444444",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1260, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "List GSC Sites", "type": "main", "index": 0 }]]
+    },
+    "List GSC Sites": {
+      "main": [[{ "node": "Flatten Sites", "type": "main", "index": 0 }]]
+    },
+    "Flatten Sites": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "active": false,
+  "tags": []
+}
