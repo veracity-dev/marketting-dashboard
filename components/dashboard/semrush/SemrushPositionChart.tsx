@@ -1,14 +1,5 @@
 'use client'
 
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Cell,
-} from 'recharts'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { fmtNumber } from '@/lib/utils'
@@ -21,18 +12,17 @@ interface Props {
 
 interface Bucket {
   label: string
-  range: string
   count: number
   color: string
 }
 
 function buildBuckets(keywords: SemrushKeyword[]): Bucket[] {
   const buckets: Bucket[] = [
-    { label: 'Top 3',   range: '1-3',    count: 0, color: '#34d399' },
-    { label: '4–10',    range: '4-10',   count: 0, color: '#fb923c' },
-    { label: '11–20',   range: '11-20',  count: 0, color: '#facc15' },
-    { label: '21–50',   range: '21-50',  count: 0, color: '#f87171' },
-    { label: '51–100',  range: '51-100', count: 0, color: '#94a3b8' },
+    { label: 'Top 3',  count: 0, color: '#34d399' },
+    { label: '4–10',   count: 0, color: '#fb923c' },
+    { label: '11–20',  count: 0, color: '#facc15' },
+    { label: '21–50',  count: 0, color: '#f87171' },
+    { label: '51–100', count: 0, color: '#94a3b8' },
   ]
 
   for (const kw of keywords) {
@@ -45,19 +35,6 @@ function buildBuckets(keywords: SemrushKeyword[]): Bucket[] {
   }
 
   return buckets
-}
-
-const CustomTooltip = ({ active, payload }: any) => {
-  if (!active || !payload?.length) return null
-  const d = payload[0].payload as Bucket
-  return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900 p-2.5 shadow-xl text-xs">
-      <p className="font-medium text-slate-200">
-        Position {d.range}
-      </p>
-      <p className="text-slate-400">{fmtNumber(d.count)} keywords</p>
-    </div>
-  )
 }
 
 export function SemrushPositionChart({ keywords, loading }: Props) {
@@ -105,26 +82,6 @@ export function SemrushPositionChart({ keywords, loading }: Props) {
         })}
       </div>
 
-      {/* Mini bar chart */}
-      <div className="mt-5 h-32">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={buckets} barCategoryGap="30%">
-            <XAxis
-              dataKey="label"
-              tick={{ fill: '#64748b', fontSize: 10 }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis hide />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-            <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-              {buckets.map((b, i) => (
-                <Cell key={i} fill={b.color} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
     </Card>
   )
 }

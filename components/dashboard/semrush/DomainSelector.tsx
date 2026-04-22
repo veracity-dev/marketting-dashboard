@@ -206,11 +206,16 @@ export function DomainSelector({
             {allItems.map((item) => {
               const isSelected = item.domain === selected
               return (
-                <button
+                // Use <div> not <button> so we can nest the remove <button> inside
+                // without triggering the "button inside button" HTML violation.
+                <div
                   key={item.domain}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onSelect(item.domain)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(item.domain) }}
                   className={cn(
-                    'group relative w-full rounded-lg border px-3 py-2.5 text-left transition-all',
+                    'group relative w-full cursor-pointer rounded-lg border px-3 py-2.5 text-left transition-all',
                     isSelected
                       ? 'border-orange-500/40 bg-orange-500/10'
                       : 'border-slate-800 bg-slate-900 hover:border-slate-700 hover:bg-slate-800/60'
@@ -244,7 +249,7 @@ export function DomainSelector({
                       )}
                     </div>
                   </div>
-                </button>
+                </div>
               )
             })}
           </div>

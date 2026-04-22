@@ -34,6 +34,7 @@ import { useGSCRefresh }        from '@/hooks/useGSCRefresh'
 import { useSemrushData }       from '@/hooks/useSemrushData'
 import { useSemrushProjects }   from '@/hooks/useSemrushProjects'
 import { useSemrushBacklinks }  from '@/hooks/useSemrushBacklinks'
+import { useSemrushRefresh }    from '@/hooks/useSemrushRefresh'
 import { defaultDateRange }     from '@/lib/utils'
 import type { DateRange, DataSource, GAProperty, GSCSite } from '@/lib/types'
 
@@ -63,6 +64,7 @@ export function DashboardShell() {
   const { projects: smrProjects, loading: smrProjectsLoading, error: smrProjectsError, refetch: smrRefetchProjects } = useSemrushProjects()
   const { data: smrData,  loading: smrLoading,  error: smrError,  fetchData: fetchSemrush  } = useSemrushData()
   const { data: blData,   loading: blLoading,   error: blError,   fetchData: fetchBacklinks } = useSemrushBacklinks()
+  const { status: smrRefreshStatus, error: smrRefreshError, refresh: smrRefresh } = useSemrushRefresh()
 
   // GSC state
   const [selectedSite, setSelectedSite] = useState<GSCSite | null>(null)
@@ -150,7 +152,7 @@ export function DashboardShell() {
     setSelectedSite(site)
   }, [gscCancel])
 
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     if (activeSource === 'ga4') {
       gaTrigger(dateRange, selectedProp, async () => {
         await refetchProps()
@@ -162,26 +164,32 @@ export function DashboardShell() {
         await fetchGSC(dateRange, selectedSite.site_url)
       })
     } else if (activeSource === 'semrush' && selectedDomain) {
-      fetchSemrush(selectedDomain, semrushDatabase)
-      fetchBacklinks(selectedDomain)
+      await smrRefresh(selectedDomain, semrushDatabase)
+      await Promise.all([
+        fetchSemrush(selectedDomain, semrushDatabase),
+        fetchBacklinks(selectedDomain),
+      ])
     }
   }, [activeSource, gaTrigger, gscTrigger, dateRange, selectedProp, selectedSite,
-      refetchProps, refetchSites, fetchGA, fetchGSC, selectedDomain, semrushDatabase, fetchSemrush, fetchBacklinks])
+      refetchProps, refetchSites, fetchGA, fetchGSC,
+      selectedDomain, semrushDatabase, fetchSemrush, fetchBacklinks, smrRefresh])
 
   // Unified refresh-state for header / overlay (whichever source is active)
-  const activeStatus  = activeSource === 'ga4'
-    ? gaRefreshStatus
-    : activeSource === 'semrush'
-    ? (smrLoading ? 'polling' as const : smrError ? 'error' as const : 'idle' as const)
+  const smrIsRefreshing = smrRefreshStatus === 'refreshing'
+  const smrStatus =
+    smrRefreshStatus === 'refreshing' ? 'polling'     as const :
+    smrRefreshStatus === 'error'      ? 'error'       as const :
+    smrRefreshStatus === 'done'       ? 'done'        as const : 'idle' as const
+
+  const activeStatus  = activeSource === 'ga4'      ? gaRefreshStatus
+    : activeSource === 'semrush' ? smrStatus
     : gscRefreshStatus
-  const activeMessage = activeSource === 'ga4'
-    ? gaProgressMsg
-    : activeSource === 'semrush'
-    ? (smrLoading ? 'Fetching Semrush data…' : '')
+  const activeMessage = activeSource === 'ga4'      ? gaProgressMsg
+    : activeSource === 'semrush' ? (smrIsRefreshing ? 'Fetching Semrush data from API…' : smrRefreshError ?? '')
     : gscProgressMsg
   const activeElapsed = activeSource === 'ga4' ? gaElapsed : gscElapsed
   const activeCancel  = activeSource === 'ga4' ? gaCancel  : gscCancel
-  const isRefreshing  = activeStatus === 'triggering' || activeStatus === 'polling'
+  const isRefreshing  = activeStatus === 'triggering' || activeStatus === 'polling' || smrIsRefreshing
 
   const hasGAData     = (gaData?.overview.length ?? 0) > 0
   const isGAEmpty     = !gaLoading  && !gaError  && !hasGAData
@@ -347,18 +355,27 @@ export function DashboardShell() {
             />
 
             <div className="min-w-0 flex-1 space-y-6">
-              {smrError && (
+              {smrRefreshError && (
                 <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
                   <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">Failed to load Semrush data</p>
-                    <p className="mt-0.5 text-red-400/80">{smrError}</p>
+                    <p className="font-medium">Semrush refresh failed</p>
+                    <p className="mt-0.5 text-xs text-red-400/80">{smrRefreshError}</p>
                     <button
-                      onClick={() => selectedDomain && fetchSemrush(selectedDomain, semrushDatabase)}
+                      onClick={() => selectedDomain && smrRefresh(selectedDomain, semrushDatabase)}
                       className="mt-2 flex items-center gap-1 text-xs text-red-400 underline hover:text-red-300"
                     >
                       <RefreshCw size={11} /> Retry
                     </button>
+                  </div>
+                </div>
+              )}
+              {(smrError || blError) && !smrRefreshError && (
+                <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+                  <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Failed to load Semrush data</p>
+                    <p className="mt-0.5 text-xs text-red-400/80">{smrError ?? blError}</p>
                   </div>
                 </div>
               )}
@@ -369,6 +386,17 @@ export function DashboardShell() {
                   <h2 className="text-sm font-semibold text-slate-300">No domain selected</h2>
                   <p className="mt-2 text-xs text-slate-500">
                     Select a domain from the sidebar, or click <span className="text-orange-400">+</span> to add one manually.
+                  </p>
+                </div>
+              )}
+
+              {/* No-data empty state: domain chosen but DB has no rows yet */}
+              {selectedDomain && !smrLoading && !blLoading && !smrData?.overview && !blData?.overview && !smrRefreshError && (
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-800 p-12 text-center">
+                  <p className="mb-2 text-3xl">📡</p>
+                  <h2 className="text-sm font-semibold text-slate-300">No data yet for {selectedDomain}</h2>
+                  <p className="mt-2 text-xs text-slate-500">
+                    Click <span className="font-medium text-orange-400">Refresh</span> in the top bar to fetch fresh data from Semrush and store it here.
                   </p>
                 </div>
               )}

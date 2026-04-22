@@ -1,33 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import type { SemrushDomainData } from '@/lib/types'
 
-const BASE = 'https://api.semrush.com/'
-
 /**
- * Parse Semrush semicolon-separated CSV into an array of objects.
- * Silently handles "NOTHING FOUND", ERROR responses, and empty bodies.
+ * GET /api/semrush/domain?domain=example.com&database=us
+ *
+ * Reads Semrush organic data from Supabase.
+ * Populate the DB first by calling POST /api/semrush/refresh.
  */
-function parseCsv(text: string): Record<string, string>[] {
-  const lines = text.trim().split('\n').map((l) => l.trim()).filter(Boolean)
-  if (lines.length < 2) return []
-  if (lines[0].startsWith('ERROR') || lines[1]?.toUpperCase().startsWith('NOTHING FOUND')) return []
-  const headers = lines[0].split(';')
-  return lines.slice(1).map((line) => {
-    const values = line.split(';')
-    return Object.fromEntries(headers.map((h, i) => [h.trim(), (values[i] ?? '').trim()]))
-  })
+
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) throw new Error('Supabase env vars not configured')
+  return createClient(url, key)
 }
 
-function cleanDomain(raw: string): string {
-  return raw
-    .replace(/^(https?:\/\/)?(www\.)?/, '')
-    .split('/')[0]
-    .toLowerCase()
-    .trim()
-}
-
-function buildUrl(apiKey: string, params: Record<string, string>): string {
-  return BASE + '?' + new URLSearchParams({ key: apiKey, ...params }).toString()
+function cleanDomain(raw: string) {
+  return raw.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0].toLowerCase().trim()
 }
 
 export async function GET(req: NextRequest) {
@@ -39,119 +29,79 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'domain query param is required' }, { status: 400 })
   }
 
-  const apiKey = process.env.SEMRUSH_API_KEY
-  if (!apiKey) {
-    return NextResponse.json({ error: 'SEMRUSH_API_KEY not configured' }, { status: 500 })
+  try {
+    const sb = getSupabase()
+
+    const [ovRes, kwRes, compRes] = await Promise.all([
+      sb.from('semrush_domain_overview')
+        .select('*')
+        .eq('domain', domain)
+        .eq('database', database)
+        .maybeSingle(),
+
+      sb.from('semrush_keywords')
+        .select('*')
+        .eq('domain', domain)
+        .eq('database', database)
+        .order('position', { ascending: true })
+        .limit(200),
+
+      sb.from('semrush_competitors')
+        .select('*')
+        .eq('domain', domain)
+        .eq('database', database)
+        .order('organic_traffic', { ascending: false })
+        .limit(10),
+    ])
+
+    const ov   = ovRes.data
+    const kws  = kwRes.data  ?? []
+    const comp = compRes.data ?? []
+
+    const overview: SemrushDomainData['overview'] = ov
+      ? {
+          domain:           ov.domain,
+          database:         ov.database,
+          semrush_rank:     ov.semrush_rank     ?? 0,
+          organic_keywords: ov.organic_keywords ?? 0,
+          organic_traffic:  ov.organic_traffic  ?? 0,
+          organic_cost:     ov.organic_cost      ?? 0,
+          paid_keywords:    ov.paid_keywords    ?? 0,
+          paid_traffic:     ov.paid_traffic     ?? 0,
+          paid_cost:        ov.paid_cost         ?? 0,
+        }
+      : null
+
+    const keywords: SemrushDomainData['keywords'] = kws.map((k) => ({
+      keyword:           k.keyword,
+      position:          k.position,
+      previous_position: k.previous_position ?? null,
+      volume:            k.volume      ?? 0,
+      cpc:               Number(k.cpc) ?? 0,
+      url:               k.url         ?? '',
+      traffic_pct:       Number(k.traffic_pct) ?? 0,
+    }))
+
+    const competitors: SemrushDomainData['competitors'] = comp.map((c) => ({
+      domain:           c.competitor_domain,
+      relevance:        Number(c.relevance)        ?? 0,
+      common_keywords:  c.common_keywords          ?? 0,
+      organic_keywords: c.organic_keywords         ?? 0,
+      organic_traffic:  c.organic_traffic          ?? 0,
+      organic_cost:     Number(c.organic_cost)     ?? 0,
+      paid_keywords:    c.paid_keywords            ?? 0,
+    }))
+
+    const fetchedAt = ov?.collected_at ?? null
+
+    return NextResponse.json({
+      overview,
+      keywords,
+      competitors,
+      fetchedAt,
+    } satisfies SemrushDomainData)
+  } catch (err) {
+    console.error('[semrush/domain] error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-
-  const timeout = AbortSignal.timeout(20_000)
-
-  // ── Fetch three endpoints in parallel ─────────────────────────────────────
-  //
-  // Standard plan includes:
-  //   • domain_ranks            — overall domain metrics (no Ab/As — backlinks & authority score
-  //                               require separate Backlinks API subscription)
-  //   • domain_organic          — top organic ranking keywords
-  //   • domain_organic_organic  — top organic competitors by keyword overlap
-  //
-  const [overviewResult, keywordsResult, competitorsResult] = await Promise.allSettled([
-    fetch(
-      buildUrl(apiKey, {
-        type:           'domain_ranks',
-        export_columns: 'Dn,Rk,Or,Ot,Oc,Ad,At,Ac',   // Ab (backlinks) & As (authority) excluded — not on Standard
-        domain,
-        database,
-      }),
-      { signal: timeout }
-    ),
-    fetch(
-      buildUrl(apiKey, {
-        type:           'domain_organic',
-        export_columns: 'Ph,Po,Pp,Pd,Nq,Cp,Ur,Tr',
-        domain,
-        database,
-        display_limit:  '200',
-        display_sort:   'tr_desc',
-      }),
-      { signal: timeout }
-    ),
-    fetch(
-      buildUrl(apiKey, {
-        type:           'domain_organic_organic',
-        export_columns: 'Dn,Cr,Np,Or,Ot,Oc,Ad',
-        domain,
-        database,
-        display_limit:  '10',
-      }),
-      { signal: timeout }
-    ),
-  ])
-
-  // ── Parse overview ─────────────────────────────────────────────────────────
-  let overview: SemrushDomainData['overview'] = null
-  if (overviewResult.status === 'fulfilled' && overviewResult.value.ok) {
-    const text = await overviewResult.value.text()
-    const rows = parseCsv(text)
-    if (rows.length) {
-      const r = rows[0]
-      overview = {
-        domain,
-        semrush_rank:     Number(r['Rank'])                 || 0,
-        organic_keywords: Number(r['Organic Keywords'])     || 0,
-        organic_traffic:  Number(r['Organic Traffic'])      || 0,
-        organic_cost:     Number(r['Organic Cost'])         || 0,
-        paid_keywords:    Number(r['Adwords Keywords'])     || 0,
-        paid_traffic:     Number(r['Adwords Traffic'])      || 0,
-        paid_cost:        Number(r['Adwords Cost'])         || 0,
-        database,
-      }
-    }
-  }
-
-  // ── Parse keywords ─────────────────────────────────────────────────────────
-  let keywords: SemrushDomainData['keywords'] = []
-  if (keywordsResult.status === 'fulfilled' && keywordsResult.value.ok) {
-    const text = await keywordsResult.value.text()
-    const rows = parseCsv(text)
-    keywords = rows
-      .map((r) => ({
-        keyword:           r['Keyword']            ?? '',
-        position:          Number(r['Position'])   || 0,
-        previous_position: r['Previous Position'] && r['Previous Position'] !== ''
-                             ? Number(r['Previous Position'])
-                             : null,
-        volume:            Number(r['Search Volume']) || 0,
-        cpc:               parseFloat(r['CPC']        ?? '0') || 0,
-        url:               r['Url']               ?? '',
-        traffic_pct:       parseFloat(r['Traffic (%)'] ?? '0') || 0,
-      }))
-      .filter((k) => k.keyword && k.position > 0 && k.position <= 100)
-  }
-
-  // ── Parse competitors ──────────────────────────────────────────────────────
-  let competitors: SemrushDomainData['competitors'] = []
-  if (competitorsResult.status === 'fulfilled' && competitorsResult.value.ok) {
-    const text = await competitorsResult.value.text()
-    const rows = parseCsv(text)
-    competitors = rows
-      .map((r) => ({
-        domain:           r['Domain']               ?? '',
-        relevance:        parseFloat(r['Competitor Relevance'] ?? '0') || 0,
-        common_keywords:  Number(r['Common Keywords'])  || 0,
-        organic_keywords: Number(r['Organic Keywords']) || 0,
-        organic_traffic:  Number(r['Organic Traffic'])  || 0,
-        organic_cost:     Number(r['Organic Cost'])     || 0,
-        paid_keywords:    Number(r['Adwords Keywords']) || 0,
-      }))
-      .filter((c) => c.domain)
-  }
-
-  const body: SemrushDomainData = {
-    overview,
-    keywords,
-    competitors,
-    fetchedAt: new Date().toISOString(),
-  }
-
-  return NextResponse.json(body)
 }
