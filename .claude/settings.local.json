@@ -35,7 +35,31 @@
       "WebFetch(domain:communitynodes.com)",
       "WebFetch(domain:www.npmjs.com)",
       "WebFetch(domain:community.n8n.io)",
-      "WebFetch(domain:marvomatic.com)"
+      "WebFetch(domain:marvomatic.com)",
+      "Bash(node -e \"const j=require\\('D:/DEV/marketting-dashboard/get-data-for-marketting-dashboard \\(1\\).json'\\); console.log\\('valid json, nodes:',j.nodes.length\\); j.nodes.filter\\(n=>n.type==='n8n-nodes-base.postgres'\\).forEach\\(n=>console.log\\(n.name,'=>',n.parameters.query.slice\\(0,60\\)\\)\\);\")",
+      "Bash(dir \"D:\\\\DEV\\\\marketting-dashboard\\\\app\\\\api\" /B)",
+      "Bash(dir \"D:\\\\DEV\\\\marketting-dashboard\\\\hooks\" /B)",
+      "Bash(curl -s \"https://api.semrush.com/?type=domain_ranks&key=a29b0f946ecc65e81342d383a9c82e54&export_columns=Dn,Rk,Or,Ot,Oc,Ad,At,Ac,Ab,As&domain=semrush.com&database=us\")",
+      "Bash(curl -s \"https://api.semrush.com/?type=domain_organic&key=a29b0f946ecc65e81342d383a9c82e54&export_columns=Ph,Po,Pp,Pd,Nq,Cp,Ur,Tr&domain=semrush.com&database=us&display_limit=5\")",
+      "Bash(curl -s \"https://api.semrush.com/?type=backlinks_overview&key=a29b0f946ecc65e81342d383a9c82e54&target=semrush.com&target_type=root_domain&export_columns=total,domains_num,urls_num,ips_num,follows_num,nofollows_num\")",
+      "Bash(curl -s \"https://api.semrush.com/?type=domain_ranks&key=a29b0f946ecc65e81342d383a9c82e54&export_columns=Dn,Rk,Or,Ot,Oc,Ad,At,Ac&domain=ahrefs.com&database=us\")",
+      "Bash(curl -s \"https://api.semrush.com/?type=domain_organic_organic&key=a29b0f946ecc65e81342d383a9c82e54&export_columns=Dn,Cr,Np,Or,Ot,Oc,Ad&domain=ahrefs.com&database=us&display_limit=5\")",
+      "Bash(curl -s \"https://api.semrush.com/?type=phrase_kdi&key=a29b0f946ecc65e81342d383a9c82e54&export_columns=Ph,Kd&phrase=seo+tool&database=us\")",
+      "Bash(del \"D:\\\\DEV\\\\marketting-dashboard\\\\components\\\\dashboard\\\\semrush\\\\SemrushBacklinksCard.tsx\")",
+      "Bash(curl -s 'https://api.semrush.com/?type=api_units&key=a29b0f946ecc65e81342d383a9c82e54')",
+      "Bash(curl -s 'https://api.semrush.com/?type=backlinks_overview&key=a29b0f946ecc65e81342d383a9c82e54&target=ahrefs.com&target_type=root_domain&export_columns=total,domains_num,urls_num,ips_num,follows_num,nofollows_num,texts_num,images_num,forms_num,frames_num')",
+      "Bash(curl -s 'https://api.semrush.com/?type=backlinks_refdomains&key=a29b0f946ecc65e81342d383a9c82e54&target=ahrefs.com&target_type=root_domain&display_limit=5&export_columns=domain_ascore,domain,backlinks_num,ip,country,first_seen,last_seen,follows_num,nofollows_num')",
+      "Bash(curl -s 'https://api.semrush.com/?type=backlinks_anchors&key=a29b0f946ecc65e81342d383a9c82e54&target=ahrefs.com&target_type=root_domain&display_limit=5&export_columns=anchor,domains_num,backlinks_num,follows_num,nofollows_num,first_seen,last_seen')",
+      "Bash(curl -s 'https://api.semrush.com/?type=backlinks_tld&key=a29b0f946ecc65e81342d383a9c82e54&target=ahrefs.com&target_type=root_domain&display_limit=5&export_columns=zone,domains_num,backlinks_num')",
+      "Bash(curl -s 'https://api.semrush.com/analytics/v1/?key=a29b0f946ecc65e81342d383a9c82e54&type=backlinks_overview&target=ahrefs.com&target_type=root_domain')",
+      "Bash(curl -s 'https://api.semrush.com/?key=a29b0f946ecc65e81342d383a9c82e54&type=backlinks&target=ahrefs.com&target_type=root_domain&display_limit=3&export_columns=page_ascore,source_url,target_url,anchor,external_num,internal_num,redirect_url,is_follow,first_seen,last_seen')",
+      "Bash(curl -s 'https://api.semrush.com/v1/api_units?key=a29b0f946ecc65e81342d383a9c82e54')",
+      "Bash(curl -s 'https://api.semrush.com/?type=units&key=a29b0f946ecc65e81342d383a9c82e54')",
+      "Bash(curl -s 'https://api.semrush.com/analytics/v1/?key=a29b0f946ecc65e81342d383a9c82e54&type=units')",
+      "Bash(curl -s 'https://api.semrush.com/analytics/v1/?key=a29b0f946ecc65e81342d383a9c82e54&type=backlinks_overview&target=semrush.com&target_type=root_domain&export_columns=total,domains_num,follows_num,nofollows_num')",
+      "Bash(curl -s 'https://api.semrush.com/?type=domain_ranks&key=a29b0f946ecc65e81342d383a9c82e54&export_columns=Dn,Or&domain=google.com&database=us')",
+      "WebFetch(domain:developer.semrush.com)",
+      "WebFetch(domain:www.semrush.com)"
     ]
   }
 }

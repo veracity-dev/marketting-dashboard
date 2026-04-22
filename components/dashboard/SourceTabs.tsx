@@ -11,6 +11,7 @@ interface SourceDef {
 const SOURCES: SourceDef[] = [
   { id: 'ga4',         label: 'Google Analytics',      icon: '📊', available: true  },
   { id: 'gsc',         label: 'Search Console',        icon: '🔍', available: true  },
+  { id: 'semrush',     label: 'Semrush',               icon: '🔗', available: true  },
   { id: 'google_ads',  label: 'Google Ads',            icon: '🎯', available: false },
   { id: 'meta',        label: 'Meta Ads',              icon: '📘', available: false },
   { id: 'linkedin',    label: 'LinkedIn',              icon: '💼', available: false },

@@ -109,7 +109,121 @@ export interface GAProperty {
 
 export type RefreshStatus = 'idle' | 'triggering' | 'polling' | 'done' | 'error'
 
-export type DataSource = 'ga4' | 'gsc' | 'google_ads' | 'meta' | 'linkedin'
+export type DataSource = 'ga4' | 'gsc' | 'semrush' | 'google_ads' | 'meta' | 'linkedin'
+
+// ── Semrush types ────────────────────────────────────────────────────────────
+
+export interface SemrushProject {
+  id: string
+  name: string
+  domain: string
+}
+
+export interface SemrushDomainOverview {
+  domain: string
+  semrush_rank: number        // global Semrush Rank (lower = more traffic)
+  organic_keywords: number
+  organic_traffic: number
+  organic_cost: number        // value of organic traffic in $ (Traffic Cost)
+  paid_keywords: number
+  paid_traffic: number
+  paid_cost: number
+  database: string
+}
+
+export interface SemrushKeyword {
+  keyword: string
+  position: number
+  previous_position: number | null
+  volume: number
+  cpc: number
+  url: string
+  traffic_pct: number
+}
+
+export interface SemrushCompetitor {
+  domain: string
+  relevance: number           // 0-1 competitor overlap score
+  common_keywords: number
+  organic_keywords: number
+  organic_traffic: number
+  organic_cost: number
+  paid_keywords: number
+}
+
+export interface SemrushDomainData {
+  overview: SemrushDomainOverview | null
+  keywords: SemrushKeyword[]
+  competitors: SemrushCompetitor[]
+  fetchedAt: string
+}
+
+// ── Semrush Backlinks API types (analytics/v1 base URL) ───────────────────────
+
+export interface SemrushBacklinksOverview {
+  authority_score: number   // 0-100, Semrush Authority Score
+  total: number             // total backlinks
+  domains_num: number       // referring domains
+  urls_num: number          // referring URLs
+  ips_num: number           // referring IPs
+  follows_num: number       // dofollow links
+  nofollows_num: number     // nofollow links
+  texts_num: number         // text links
+  images_num: number        // image links
+}
+
+export interface SemrushRefDomain {
+  domain: string
+  authority_score: number
+  backlinks_num: number
+  country: string
+  first_seen: string
+  last_seen: string
+  follows_num: number
+  nofollows_num: number
+}
+
+export interface SemrushAnchor {
+  anchor: string
+  domains_num: number
+  backlinks_num: number
+  follows_num: number
+  nofollows_num: number
+  first_seen: string   // Unix epoch seconds as string
+  last_seen: string
+}
+
+export interface SemrushTld {
+  zone: string
+  domains_num: number
+  backlinks_num: number
+}
+
+export interface SemrushGeo {
+  country_name: string
+  domains_num: number
+  backlinks_num: number
+}
+
+export interface SemrushPage {
+  source_url: string
+  source_title: string
+  page_ascore: number
+  backlinks_num: number
+  last_seen: string    // Unix epoch seconds as string
+}
+
+export interface SemrushBacklinksData {
+  overview: SemrushBacklinksOverview | null
+  ref_domains: SemrushRefDomain[]
+  anchors: SemrushAnchor[]
+  tld: SemrushTld[]
+  geo: SemrushGeo[]
+  pages: SemrushPage[]
+  error?: string           // 'zero_units' | 'no_access' | 'api_error' | 'invalid_domain'
+  error_message?: string   // raw API error string for display
+  fetchedAt: string
+}
 
 // ── Google Search Console types ──────────────────────────────────────────────
 

@@ -18,13 +18,22 @@ import { GSCKPIGrid }           from './gsc/GSCKPIGrid'
 import { GSCTrendChart }        from './gsc/GSCTrendChart'
 import { TopQueriesTable }      from './gsc/TopQueriesTable'
 import { TopPagesGSCTable }     from './gsc/TopPagesGSCTable'
-import { GSCDeviceCountry }     from './gsc/GSCDeviceCountry'
+import { GSCDeviceCountry }        from './gsc/GSCDeviceCountry'
+import { DomainSelector }          from './semrush/DomainSelector'
+import { SemrushKPIGrid }          from './semrush/SemrushKPIGrid'
+import { SemrushPositionChart }    from './semrush/SemrushPositionChart'
+import { SemrushKeywordsTable }    from './semrush/SemrushKeywordsTable'
+import { SemrushCompetitorsCard }  from './semrush/SemrushCompetitorsCard'
+import { SemrushBacklinksSection } from './semrush/SemrushBacklinksSection'
 import { useGA4Data }           from '@/hooks/useGA4Data'
 import { useRefresh }           from '@/hooks/useRefresh'
 import { useProperties }        from '@/hooks/useProperties'
 import { useGSCData }           from '@/hooks/useGSCData'
 import { useGSCSites }          from '@/hooks/useGSCSites'
 import { useGSCRefresh }        from '@/hooks/useGSCRefresh'
+import { useSemrushData }       from '@/hooks/useSemrushData'
+import { useSemrushProjects }   from '@/hooks/useSemrushProjects'
+import { useSemrushBacklinks }  from '@/hooks/useSemrushBacklinks'
 import { defaultDateRange }     from '@/lib/utils'
 import type { DateRange, DataSource, GAProperty, GSCSite } from '@/lib/types'
 
@@ -47,6 +56,13 @@ export function DashboardShell() {
   const { data: gaData, loading: gaLoading, error: gaError, fetchData: fetchGA } = useGA4Data()
   const { status: gaRefreshStatus, progressMessage: gaProgressMsg,
           elapsedSeconds: gaElapsed, trigger: gaTrigger, cancel: gaCancel } = useRefresh()
+
+  // Semrush state
+  const [selectedDomain,  setSelectedDomain]  = useState<string>('')
+  const [semrushDatabase, setSemrushDatabase] = useState<string>('us')
+  const { projects: smrProjects, loading: smrProjectsLoading, error: smrProjectsError, refetch: smrRefetchProjects } = useSemrushProjects()
+  const { data: smrData,  loading: smrLoading,  error: smrError,  fetchData: fetchSemrush  } = useSemrushData()
+  const { data: blData,   loading: blLoading,   error: blError,   fetchData: fetchBacklinks } = useSemrushBacklinks()
 
   // GSC state
   const [selectedSite, setSelectedSite] = useState<GSCSite | null>(null)
@@ -90,10 +106,39 @@ export function DashboardShell() {
     }
   }, [dateRange, selectedSite, fetchGSC, activeSource])
 
+  // Auto-load Semrush organic data when domain or database changes
+  useEffect(() => {
+    if (activeSource === 'semrush' && selectedDomain) {
+      fetchSemrush(selectedDomain, semrushDatabase)
+    }
+  }, [selectedDomain, semrushDatabase, fetchSemrush, activeSource])
+
+  // Auto-load Semrush backlinks when domain changes
+  useEffect(() => {
+    if (activeSource === 'semrush' && selectedDomain) {
+      fetchBacklinks(selectedDomain)
+    }
+  }, [selectedDomain, fetchBacklinks, activeSource])
+
+  // Pick first project as default domain when projects load
+  useEffect(() => {
+    if (smrProjects.length > 0 && !selectedDomain) {
+      setSelectedDomain(smrProjects[0].domain)
+    }
+  }, [smrProjects, selectedDomain])
+
   const handleDateChange = useCallback((range: DateRange) => {
     gaCancel(); gscCancel()
     setDateRange(range)
   }, [gaCancel, gscCancel])
+
+  const handleDomainSelect = useCallback((domain: string) => {
+    setSelectedDomain(domain)
+  }, [])
+
+  const handleDatabaseChange = useCallback((db: string) => {
+    setSemrushDatabase(db)
+  }, [])
 
   const handlePropertySelect = useCallback((prop: GAProperty) => {
     gaCancel()
@@ -116,15 +161,26 @@ export function DashboardShell() {
         await refetchSites()
         await fetchGSC(dateRange, selectedSite.site_url)
       })
+    } else if (activeSource === 'semrush' && selectedDomain) {
+      fetchSemrush(selectedDomain, semrushDatabase)
+      fetchBacklinks(selectedDomain)
     }
   }, [activeSource, gaTrigger, gscTrigger, dateRange, selectedProp, selectedSite,
-      refetchProps, refetchSites, fetchGA, fetchGSC])
+      refetchProps, refetchSites, fetchGA, fetchGSC, selectedDomain, semrushDatabase, fetchSemrush, fetchBacklinks])
 
   // Unified refresh-state for header / overlay (whichever source is active)
-  const activeStatus  = activeSource === 'ga4' ? gaRefreshStatus  : gscRefreshStatus
-  const activeMessage = activeSource === 'ga4' ? gaProgressMsg    : gscProgressMsg
-  const activeElapsed = activeSource === 'ga4' ? gaElapsed        : gscElapsed
-  const activeCancel  = activeSource === 'ga4' ? gaCancel         : gscCancel
+  const activeStatus  = activeSource === 'ga4'
+    ? gaRefreshStatus
+    : activeSource === 'semrush'
+    ? (smrLoading ? 'polling' as const : smrError ? 'error' as const : 'idle' as const)
+    : gscRefreshStatus
+  const activeMessage = activeSource === 'ga4'
+    ? gaProgressMsg
+    : activeSource === 'semrush'
+    ? (smrLoading ? 'Fetching Semrush data…' : '')
+    : gscProgressMsg
+  const activeElapsed = activeSource === 'ga4' ? gaElapsed : gscElapsed
+  const activeCancel  = activeSource === 'ga4' ? gaCancel  : gscCancel
   const isRefreshing  = activeStatus === 'triggering' || activeStatus === 'polling'
 
   const hasGAData     = (gaData?.overview.length ?? 0) > 0
@@ -136,8 +192,9 @@ export function DashboardShell() {
   const hasGSCError   = !gscLoading && !!gscError
 
   const lastCollectedAt =
-    activeSource === 'ga4' ? gaData?.lastCollectedAt ?? null
-                           : gscData?.lastCollectedAt ?? null
+    activeSource === 'ga4'      ? gaData?.lastCollectedAt ?? null
+    : activeSource === 'semrush' ? (smrData?.fetchedAt ?? blData?.fetchedAt ?? null)
+                                 : gscData?.lastCollectedAt ?? null
 
   return (
     <>
@@ -275,8 +332,84 @@ export function DashboardShell() {
           </div>
         )}
 
+        {/* ────────────── Semrush view ────────────── */}
+        {activeSource === 'semrush' && (
+          <div className="flex gap-6">
+            <DomainSelector
+              projects={smrProjects}
+              projectsLoading={smrProjectsLoading}
+              projectsError={smrProjectsError}
+              selected={selectedDomain}
+              database={semrushDatabase}
+              onSelect={handleDomainSelect}
+              onDatabaseChange={handleDatabaseChange}
+              onRefetchProjects={smrRefetchProjects}
+            />
+
+            <div className="min-w-0 flex-1 space-y-6">
+              {smrError && (
+                <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+                  <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Failed to load Semrush data</p>
+                    <p className="mt-0.5 text-red-400/80">{smrError}</p>
+                    <button
+                      onClick={() => selectedDomain && fetchSemrush(selectedDomain, semrushDatabase)}
+                      className="mt-2 flex items-center gap-1 text-xs text-red-400 underline hover:text-red-300"
+                    >
+                      <RefreshCw size={11} /> Retry
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!selectedDomain && !smrProjectsLoading && (
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-800 p-12 text-center">
+                  <p className="mb-2 text-3xl">🔗</p>
+                  <h2 className="text-sm font-semibold text-slate-300">No domain selected</h2>
+                  <p className="mt-2 text-xs text-slate-500">
+                    Select a domain from the sidebar, or click <span className="text-orange-400">+</span> to add one manually.
+                  </p>
+                </div>
+              )}
+
+              {selectedDomain && (
+                <>
+                  <SemrushKPIGrid
+                    overview={smrData?.overview ?? null}
+                    loading={smrLoading}
+                  />
+
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    <SemrushPositionChart
+                      keywords={smrData?.keywords ?? []}
+                      loading={smrLoading}
+                    />
+                    <SemrushCompetitorsCard
+                      competitors={smrData?.competitors ?? []}
+                      loading={smrLoading}
+                    />
+                  </div>
+
+                  <SemrushKeywordsTable
+                    keywords={smrData?.keywords ?? []}
+                    loading={smrLoading}
+                  />
+
+                  <SemrushBacklinksSection
+                    data={blData}
+                    loading={blLoading}
+                    error={blError}
+                    domain={selectedDomain}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Coming soon */}
-        {activeSource !== 'ga4' && activeSource !== 'gsc' && (
+        {activeSource !== 'ga4' && activeSource !== 'gsc' && activeSource !== 'semrush' && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <p className="mb-4 text-4xl">🚧</p>
             <h2 className="text-lg font-semibold text-slate-300">Coming soon</h2>
