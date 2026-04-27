@@ -109,7 +109,7 @@ export interface GAProperty {
 
 export type RefreshStatus = 'idle' | 'triggering' | 'polling' | 'done' | 'error'
 
-export type DataSource = 'ga4' | 'gsc' | 'semrush' | 'google_ads' | 'meta' | 'linkedin'
+export type DataSource = 'ga4' | 'gsc' | 'semrush' | 'google_ads' | 'meta' | 'linkedin' | 'agent'
 
 // ── Semrush types ────────────────────────────────────────────────────────────
 
@@ -299,4 +299,32 @@ export interface GSCSite {
   site_url: string
   permission_level: string
   last_synced: string | null
+}
+
+// ── Chat / AI Agent types ───────────────────────────────────────────────────
+
+export interface ChatSession {
+  id: number
+  title: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ChatMessage {
+  id: number
+  session_id: number
+  role: 'user' | 'assistant'
+  content: string
+  metadata: Record<string, unknown>
+  created_at: string
+}
+
+export interface ParsedSegment {
+  type: 'text' | 'table' | 'chart'
+  content: string
+  tableHeaders?: string[]
+  tableRows?: string[][]
+  chartData?: Record<string, unknown>[]
+  chartType?: 'bar' | 'line' | 'pie'
+  chartConfig?: { xKey: string; yKeys: string[] }
 }

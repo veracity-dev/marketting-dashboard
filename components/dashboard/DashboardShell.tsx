@@ -8,6 +8,7 @@ import { PropertySelector }     from './PropertySelector'
 import { SiteSelector }         from './SiteSelector'
 import { LoadingOverlay }       from './LoadingOverlay'
 import { EmptyState }           from './EmptyState'
+import { ChatView }             from '../chat/ChatView'
 import { KPIGrid }              from './ga4/KPIGrid'
 import { EcommerceSection }     from './ga4/EcommerceSection'
 import { SessionsTrendChart }   from './ga4/SessionsTrendChart'
@@ -436,8 +437,13 @@ export function DashboardShell() {
           </div>
         )}
 
+        {/* ────────────── AI Agent view ────────────── */}
+        {activeSource === 'agent' && (
+          <ChatView />
+        )}
+
         {/* Coming soon */}
-        {activeSource !== 'ga4' && activeSource !== 'gsc' && activeSource !== 'semrush' && (
+        {activeSource !== 'ga4' && activeSource !== 'gsc' && activeSource !== 'semrush' && activeSource !== 'agent' && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <p className="mb-4 text-4xl">🚧</p>
             <h2 className="text-lg font-semibold text-slate-300">Coming soon</h2>

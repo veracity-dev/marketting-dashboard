@@ -21,3 +21,13 @@ body {
 /* Recharts tweaks */
 .recharts-default-legend    { display: flex; gap: 16px; }
 .recharts-legend-item-text  { color: #94a3b8 !important; font-size: 12px; }
+
+/* AI Agent button animations */
+@keyframes agent-glow {
+  0%, 100% { opacity: 0; box-shadow: 0 0 0 rgba(99, 102, 241, 0); }
+  50%      { opacity: 1; box-shadow: 0 0 10px rgba(99, 102, 241, 0.15); }
+}
+@keyframes agent-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
