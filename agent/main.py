@@ -121,6 +121,8 @@ async def api_chat(body: ChatRequest):
     )
 
 
+# To run this backend: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+

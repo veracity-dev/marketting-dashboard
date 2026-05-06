@@ -1,11 +1,16 @@
 import os
-from crewai import Agent
+from crewai import Agent, LLM
 from crewai_tools import NL2SQLTool
 from dotenv import load_dotenv
 
 load_dotenv()
 
 nl2sql_tool = NL2SQLTool(db_uri=os.environ["DATABASE_URL"])
+
+llm = LLM(
+    model=os.environ.get("OPENAI_MODEL_NAME", "gpt-4o-mini"),
+    api_key=os.environ["OPENAI_API_KEY"],
+)
 
 SCHEMA_CONTEXT = """
 You are a marketing data analyst. The PostgreSQL database contains marketing analytics data from three platforms.
@@ -59,6 +64,7 @@ marketing_agent = Agent(
     goal="Answer marketing analytics questions by querying the PostgreSQL database. Always provide clear, data-driven answers.",
     backstory=SCHEMA_CONTEXT,
     tools=[nl2sql_tool],
+    llm=llm,
     verbose=False,
     respect_context_window=True,
     max_iter=50,
